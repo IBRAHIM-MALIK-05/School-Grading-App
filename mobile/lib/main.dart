@@ -1,6 +1,8 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
-import 'screens/login_screen.dart'; // Import your new screen
+
+import 'screens/auth/login_screen.dart';
+import 'widgets/app_theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,12 +16,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'School Grading App',
       debugShowCheckedModeBanner: false, // Removes the red debug banner
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF142D4E), 
-        ),
-        useMaterial3: true,
-      ),
+      theme: buildAppTheme(),
       home: const LoginScreen(), // Boot directly into the login screen
     );
   }

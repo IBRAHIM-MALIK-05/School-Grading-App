@@ -1,0 +1,176 @@
+// lib/screens/shared/report_card_view.dart
+// One student's result card, built from the marks that teachers uploaded.
+
+import 'package:flutter/material.dart';
+
+import '../../models/report_card.dart';
+import '../../services/current_service.dart';
+import '../../widgets/app_theme.dart';
+import '../../widgets/async_views.dart';
+
+class ReportCardView extends StatefulWidget {
+  final int studentId;
+  const ReportCardView({super.key, required this.studentId});
+
+  @override
+  State<ReportCardView> createState() => _ReportCardViewState();
+}
+
+class _ReportCardViewState extends State<ReportCardView> {
+  late Future<ReportCard> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = dataService.getReportCard(widget.studentId);
+  }
+
+  void _reload() =>
+      setState(() => _future = dataService.getReportCard(widget.studentId));
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Result Card')),
+      body: FutureBuilder<ReportCard>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const LoadingView(message: 'Preparing result card...');
+          }
+          if (snapshot.hasError) {
+            return ErrorView(error: snapshot.error!, onRetry: _reload);
+          }
+          return _buildCard(snapshot.data!);
+        },
+      ),
+    );
+  }
+
+  Widget _buildCard(ReportCard card) {
+    const headerStyle = TextStyle(color: Colors.white, fontWeight: FontWeight.bold);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Card(
+        elevation: 4,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Text(
+                  card.schoolName,
+                  style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: Text(
+                  card.isPublished ? 'FINAL RESULT' : 'DRAFT – not published yet',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: card.isPublished ? AppColors.success : AppColors.warning,
+                  ),
+                ),
+              ),
+              const Divider(height: 30, thickness: 2),
+              Text('Student Name: ${card.studentName}',
+                  style: const TextStyle(fontSize: 16)),
+              const SizedBox(height: 8),
+              Text('Roll Number: ${card.rollNo}', style: const TextStyle(fontSize: 16)),
+              const SizedBox(height: 8),
+              Text('Class: ${card.className}', style: const TextStyle(fontSize: 16)),
+              if (card.classTeacherName != null) ...[
+                const SizedBox(height: 8),
+                Text('Class Teacher: ${card.classTeacherName}',
+                    style: const TextStyle(fontSize: 16)),
+              ],
+              const SizedBox(height: 24),
+
+              // Table header
+              Container(
+                color: AppColors.primary,
+                padding: const EdgeInsets.all(8),
+                child: const Row(
+                  children: [
+                    Expanded(flex: 2, child: Text('Subject', style: headerStyle)),
+                    Expanded(child: Text('Max', style: headerStyle)),
+                    Expanded(child: Text('Obtained', style: headerStyle)),
+                  ],
+                ),
+              ),
+
+              // One row per subject
+              for (final line in card.lines)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  child: Row(
+                    children: [
+                      Expanded(flex: 2, child: Text(line.subjectName)),
+                      Expanded(child: Text(line.maxMarks.toString())),
+                      Expanded(
+                        child: Text(
+                          line.obtained?.toString() ?? 'Pending',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: line.obtained == null ? AppColors.warning : null,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              const Divider(height: 30, thickness: 2),
+
+              if (!card.isComplete)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  color: Colors.orange.shade50,
+                  child: Text(
+                    'Incomplete: ${card.pendingSubjects} subject(s) still waiting for marks. '
+                    'Percentage and grade will appear when all marks are uploaded.',
+                  ),
+                )
+              else ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Total: ${card.totalObtained} / ${card.totalMax}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text('Percentage: ${card.percentage!.toStringAsFixed(1)}%',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Grade: ${card.grade}',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: card.grade == 'F' ? AppColors.danger : AppColors.success,
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 24),
+              const Text('Teacher Remarks:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              const Text(
+                'AI-generated remarks will be added in a future version.',
+                style: TextStyle(fontStyle: FontStyle.italic),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
