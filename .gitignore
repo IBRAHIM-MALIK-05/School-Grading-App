@@ -1,0 +1,28 @@
+# ---- Root .gitignore for the School Grading App monorepo ----
+# (mobile/ also has its own Flutter .gitignore)
+
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+
+# ---- .NET API (api/) ----
+**/bin/
+**/obj/
+**/.vs/
+*.user
+*.suo
+# Never commit real secrets (DB passwords, JWT keys)
+**/appsettings.*.local.json
+*.env
+
+# ---- Flutter (mobile/) ----
+mobile/build/
+mobile/.dart_tool/
+mobile/android/local.properties
+mobile/android/.gradle/
+
+# ---- Office temp files (docs/) ----
+~$*
