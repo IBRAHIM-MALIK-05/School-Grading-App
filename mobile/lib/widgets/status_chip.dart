@@ -23,7 +23,10 @@ class StatusChip extends StatelessWidget {
             label: 'Submitted', color: AppColors.success, icon: Icons.check_circle);
       case SubmissionState.inProgress:
         return StatusChip(
-            label: 'In progress $entered/$total',
+            // everyone has marks but the teacher has not pressed Submit yet
+            label: entered == total && total > 0
+                ? 'Awaiting submit'
+                : 'In progress $entered/$total',
             color: AppColors.warning,
             icon: Icons.timelapse);
       case SubmissionState.notUploaded:

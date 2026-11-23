@@ -187,11 +187,11 @@ class _ClassTrackerScreenState extends State<ClassTrackerScreen> {
               ],
             ),
             const SizedBox(height: 4),
-            Text(
-              'Teacher: ${s.teacherName}'
-              '${s.submittedAt != null ? '   •   Submitted ${_date(s.submittedAt!)}' : ''}',
-              style: const TextStyle(color: AppColors.muted),
-            ),
+            Text('Teacher: ${s.teacherName}',
+                style: const TextStyle(color: AppColors.muted)),
+            if (s.submittedAt != null)
+              Text('Submitted on ${_date(s.submittedAt!)}',
+                  style: const TextStyle(color: AppColors.muted, fontSize: 12)),
             const SizedBox(height: 8),
             LinearProgressIndicator(
               value: progress,

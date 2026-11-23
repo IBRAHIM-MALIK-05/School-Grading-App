@@ -80,7 +80,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           ),
         ],
       ),
-      drawer: const AppDrawer(),
+      drawer: AppDrawer(onReturn: _reload),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openCreateAccount,
         icon: const Icon(Icons.person_add_alt_1),
@@ -118,10 +118,19 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                         child: Text(user.fullName[0]),
                       ),
                       title: Text(user.fullName),
-                      subtitle: Text(
-                        '${user.loginId}\n${user.roleLabel}'
-                        '${user.isClassTeacher ? ' of ${user.classTeacherOfClassName}' : ''}'
-                        '${user.mustChangePassword ? '\n⚠ Must change password at next login' : ''}',
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(user.loginId),
+                          Text(user.isClassTeacher
+                              ? 'Class Teacher • ${user.classTeacherOfClassName}'
+                              : user.roleLabel),
+                          if (user.mustChangePassword)
+                            const Text('Must change password',
+                                style: TextStyle(
+                                    color: AppColors.warning,
+                                    fontWeight: FontWeight.w600)),
+                        ],
                       ),
                       isThreeLine: true,
                       trailing: user.id == me.id

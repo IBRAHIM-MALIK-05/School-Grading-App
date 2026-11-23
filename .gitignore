@@ -26,3 +26,7 @@ mobile/android/.gradle/
 
 # ---- Office temp files (docs/) ----
 ~$*
+
+# ---- Python tools (screenshots / documents) ----
+tools/.venv/
+__pycache__/

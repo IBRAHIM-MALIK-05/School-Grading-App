@@ -69,7 +69,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
           ),
         ],
       ),
-      drawer: const AppDrawer(),
+      drawer: AppDrawer(onReturn: _reload),
       body: FutureBuilder<List<TeacherAssignment>>(
         future: _future,
         builder: (context, snapshot) {
@@ -145,8 +145,8 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
 
   Widget _subjectCard(TeacherAssignment a) {
     final subtitle = a.isClassPublished
-        ? '${a.studentCount} students • Results published (locked)'
-        : '${a.studentCount} students • ${a.enteredCount} marks entered';
+        ? 'Results published (locked)'
+        : '${a.enteredCount}/${a.studentCount} students marked';
 
     return Card(
       child: ListTile(

@@ -43,7 +43,7 @@ class _VpDashboardState extends State<VpDashboard> {
               icon: const Icon(Icons.refresh), tooltip: 'Refresh', onPressed: _reload),
         ],
       ),
-      drawer: const AppDrawer(),
+      drawer: AppDrawer(onReturn: _reload),
       body: FutureBuilder<SchoolOverview>(
         future: _future,
         builder: (context, snapshot) {
@@ -121,13 +121,19 @@ class _VpDashboardState extends State<VpDashboard> {
     return Card(
       child: ListTile(
         leading: const Icon(Icons.class_outlined),
-        title: Text(c.name),
+        // Name + status chip on one line, details below (no squeezed text)
+        title: Row(
+          children: [
+            Expanded(child: Text(c.name)),
+            StatusChip.classStatus(c.statusLabel),
+          ],
+        ),
         subtitle: Text(
-          '${c.studentCount} students • ${c.submittedCount}/${c.subjects.length} subjects submitted\n'
+          '${c.submittedCount}/${c.subjects.length} subjects submitted • ${c.studentCount} students\n'
           'Class Teacher: ${c.classTeacherName ?? 'not assigned'}',
         ),
         isThreeLine: true,
-        trailing: StatusChip.classStatus(c.statusLabel),
+        trailing: const Icon(Icons.chevron_right),
         onTap: () async {
           await Navigator.push(
             context,

@@ -79,19 +79,16 @@ class _CredentialsDialog extends StatelessWidget {
     }
   }
 
+  // Label on top, value below (long emails don't break in the middle)
   Widget _row(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 150,
-            child: Text(label, style: const TextStyle(color: AppColors.muted)),
-          ),
-          Expanded(
-            child: SelectableText(value,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          ),
+          Text(label, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+          SelectableText(value,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         ],
       ),
     );
