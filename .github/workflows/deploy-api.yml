@@ -1,0 +1,49 @@
+# CI/CD: every push to main that changes the API builds it and deploys it
+# to Azure App Service (Linux, Free F1): https://school-grading-api-bcgi.azurewebsites.net
+#
+# Secrets (never in git):
+#   AZURE_WEBAPP_PUBLISH_PROFILE  - GitHub repository secret (deployment credentials)
+#   The database connection string and the JWT key are App Settings on Azure itself.
+
+name: Deploy API to Azure App Service
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'api/**'
+      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:   # "Run workflow" button on GitHub
+
+env:
+  AZURE_WEBAPP_NAME: school-grading-api-bcgi
+  PROJECT_PATH: api/SchoolGradingApi/SchoolGradingApi.csproj
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v5
+
+      - name: Install .NET 10 SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore NuGet packages
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build (Release)
+        run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --no-build --output ./publish
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publish

@@ -17,6 +17,7 @@ Thumbs.db
 # Never commit real secrets (DB passwords, JWT keys)
 **/appsettings.*.local.json
 *.local.json
+*.local.xml
 *.env
 
 # ---- Flutter (mobile/) ----

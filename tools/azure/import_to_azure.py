@@ -5,6 +5,8 @@ MySQL Flexible Server and verify it against the local XAMPP database.
      { "host": "<server>.mysql.database.azure.com", "user": "<admin user>", "password": "..." }
 2. Run:
      tools\\.venv\\Scripts\\python -I tools\\azure\\import_to_azure.py
+   Only reset the cloud data back to the demo data (no screenshots):
+     tools\\.venv\\Scripts\\python -I tools\\azure\\import_to_azure.py --reset
 
 The connection is encrypted (TLS) and the server certificate is checked.
 Every step is printed and also saved as a screenshot (docs/screenshots/m3_*.png).
@@ -184,6 +186,12 @@ def step_write_test(config):
 
 def main():
     config = load_config()
+    if "--reset" in sys.argv:
+        # Put the cloud database back to the clean demo data (e.g. after Postman / app tests)
+        step_import(config)
+        print("\n".join(step_compare(config)[:12]))
+        print("Azure database reset to the clean demo data.")
+        return
     OUT.mkdir(parents=True, exist_ok=True)
     steps = [
         (step_connect, "m3_06_azure_connect_tls.png", "Connect to Azure MySQL"),

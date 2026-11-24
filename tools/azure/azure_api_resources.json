@@ -1,0 +1,20 @@
+{
+  "resourceGroup": "rg-school-grading",
+  "region": "koreacentral",
+  "plan": "plan-school-grading",
+  "planSku": "Free F1",
+  "planOs": "Linux",
+  "app": "school-grading-api-bcgi",
+  "url": "https://school-grading-api-bcgi.azurewebsites.net",
+  "runtime": "DOTNETCORE|10.0",
+  "httpsOnly": true,
+  "minTls": "1.2",
+  "ftps": "Disabled",
+  "startup": "dotnet SchoolGradingApi.dll",
+  "appSettings": [
+    "ConnectionStrings__DefaultConnection",
+    "Jwt__Key",
+    "ASPNETCORE_ENVIRONMENT"
+  ],
+  "state": "Running"
+}

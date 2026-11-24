@@ -6,11 +6,13 @@ your Azure for Students account in that window; the profile remembers it.
 Before each screenshot the account name and subscription ID are blurred,
 because the screenshots go into a public GitHub repository.
 
-    tools\\.venv\\Scripts\\python -I tools\\screenshots\\capture_azure_portal.py
+    tools\\.venv\\Scripts\\python -I tools\\screenshots\\capture_azure_portal.py        (Milestone 3)
+    tools\\.venv\\Scripts\\python -I tools\\screenshots\\capture_azure_portal.py m6     (Milestone 6)
 """
 
 import json
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -22,10 +24,11 @@ PROFILE = ROOT / "tools" / ".azure_browser_profile"
 BRAVE = Path(r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe")
 AZ = ROOT / "tools" / "azure-cli" / "bin" / "az.cmd"
 RESOURCES = ROOT / "tools" / "azure" / "azure_resources.json"
+API_RESOURCES = ROOT / "tools" / "azure" / "azure_api_resources.json"
 
 # Blur: GUIDs (subscription / tenant IDs) and the signed-in account / directory name
 BLUR_JS = r"""() => {
-  const secret = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|@students|students\.|DEFAULT DIRECTORY/i;
+  const secret = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|@students|students\.|DEFAULT DIRECTORY|password=|eyJ[\w-]{10}|[A-Za-z0-9]{40,}/i;
   for (const el of document.querySelectorAll('body *')) {
     const own = [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('');
     if (own.trim() && secret.test(own)) el.style.filter = 'blur(6px)';
@@ -95,14 +98,40 @@ def open_menu_item(page, group, label):
     item.first.click()
 
 
+def milestone6(page):
+    """App Service overview, the Free F1 plan and the (hidden) environment variables."""
+    api = json.loads(API_RESOURCES.read_text(encoding="utf-8"))
+    account = az_json("account", "show")
+    base = (f"https://portal.azure.com/#@{account['tenantId']}/resource/subscriptions/{account['id']}"
+            f"/resourceGroups/{api['resourceGroup']}/providers/Microsoft.Web")
+
+    page.goto(f"{base}/sites/{api['app']}/appServices")
+    print(">>> If asked, sign in with your Azure for Students account in the Brave window.")
+    frame_with_text(page, api["app"], timeout_s=15 * 60)
+    frame_with_text(page, "Default domain", timeout_s=180)
+    shot(page, "m6_02_portal_app_service_overview.png", wait_ms=8000)
+
+    open_menu_item(page, "Settings", "Environment variables")
+    frame_with_text(page, "ConnectionStrings__DefaultConnection", timeout_s=180)
+    shot(page, "m6_04_portal_environment_variables.png", wait_ms=6000)
+
+    page.goto(f"{base}/serverfarms/{api['plan']}/webHostingPlan")
+    frame_with_text(page, api["plan"], timeout_s=180)
+    shot(page, "m6_03_portal_app_service_plan_f1.png", wait_ms=8000)
+
+
 def main():
-    url, res = server_url()
     OUT.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as p:
         context = p.chromium.launch_persistent_context(
             str(PROFILE), executable_path=str(BRAVE), headless=False,
             viewport={"width": 1440, "height": 860}, args=["--no-first-run"])
         page = context.pages[0] if context.pages else context.new_page()
+        if "m6" in sys.argv:
+            milestone6(page)
+            context.close()
+            return
+        url, res = server_url()
         page.goto(url + "/overview")
         print(">>> If asked, sign in with your Azure for Students account in the Brave window.")
         frame_with_text(page, res["server"], timeout_s=15 * 60)  # time to sign in

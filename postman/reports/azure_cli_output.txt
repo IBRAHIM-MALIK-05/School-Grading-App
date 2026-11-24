@@ -1,0 +1,302 @@
+﻿Waking up https://school-grading-api-bcgi.azurewebsites.net ...
+newman
+
+School Grading API
+
+□ 1. Auth - Login
+└ Login - Admin
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 1.25kB, 1244ms]
+  √  Status is 200 OK
+  √  Response time under 3 seconds
+  √  Response has a JWT token
+  √  Password hash is never returned
+  √  Role is admin
+
+└ Login - Principal / VP
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 879B, 392ms]
+  √  Status is 200 OK
+  √  Response time under 3 seconds
+  √  Response has a JWT token
+  √  Password hash is never returned
+  √  Role is vp
+
+└ Login - Teacher Sania (Class Teacher of 8-B)
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 915B, 392ms]
+  √  Status is 200 OK
+  √  Response time under 3 seconds
+  √  Response has a JWT token
+  √  Password hash is never returned
+  √  Sania is Class Teacher of Class 8 - B
+
+└ Login - Teacher Maryam (Class Teacher of 9-A)
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 920B, 374ms]
+  √  Status is 200 OK
+  √  Response time under 3 seconds
+  √  Response has a JWT token
+  √  Password hash is never returned
+
+└ Login - wrong password
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [401 Unauthorized, 201B, 389ms]
+  √  Status is 401 Unauthorized
+  √  Error message mentions "Invalid Login ID or password"
+
+□ 2. Auth - Create account & first login
+└ Register - new Teacher (Admin)
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [201 Created, 280B, 729ms]
+  √  Status is 201 Created
+  √  Login ID is generated (…@school.com)
+  √  Temporary password has 10 characters
+
+└ Register - class already has a Class Teacher
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [409 Conflict, 208B, 218ms]
+  √  Status is 409 Conflict
+  √  Error message mentions "already has a Class Teacher"
+
+└ Register - invalid email
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [400 Bad Request, 206B, 199ms]
+  √  Status is 400 Bad Request
+  √  Error message mentions "valid email"
+
+└ Register - by a Teacher (not allowed)
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [403 Forbidden, 204B, 197ms]
+  √  Status is 403 Forbidden
+  √  Error message mentions "Only the Admin"
+
+└ Register - without a token
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [401 Unauthorized, 128B, 189ms]
+  √  Status is 401 Unauthorized
+
+└ Login - new Teacher with temporary password
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 927B, 393ms]
+  √  Status is 200 OK
+  √  Must change password is true
+
+└ New Teacher - blocked until password is changed
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [403 Forbidden, 213B, 195ms]
+  √  Status is 403 Forbidden
+  √  Error message mentions "change your temporary password"
+
+└ Change password - too weak
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/change-password [400 Bad Request, 228B, 360ms]
+  √  Status is 400 Bad Request
+  √  Error message mentions "one letter and one number"
+
+└ Change password - wrong current password
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/change-password [400 Bad Request, 201B, 364ms]
+  √  Status is 400 Bad Request
+  √  Error message mentions "Current password is incorrect"
+
+└ Change password - success
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/change-password [200 OK, 353B, 523ms]
+  √  Status is 200 OK
+  √  Must change password is now false
+
+└ New Teacher - now allowed in
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [200 OK, 150B, 208ms]
+  √  Status is 200 OK
+  √  Returns a list
+
+□ 3. Users & password reset (Admin)
+└ Users - list (Admin)
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/users [200 OK, 1.5kB, 205ms]
+  √  Status is 200 OK
+  √  Response time under 3 seconds
+  √  At least the 6 demo users
+  √  No password hashes in the response
+  √  New Teacher is in the list
+
+└ Users - list as Principal/VP (not allowed)
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/users [403 Forbidden, 202B, 188ms]
+  √  Status is 403 Forbidden
+
+└ Users - list without a token
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/users [401 Unauthorized, 128B, 189ms]
+  √  Status is 401 Unauthorized
+
+└ Reset password - Admin resets the new Teacher
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/reset-password/7 [200 OK, 275B, 356ms]
+  √  Status is 200 OK
+  √  A new temporary password is returned
+
+└ Login - old password stops working after reset
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [401 Unauthorized, 201B, 333ms]
+  √  Status is 401 Unauthorized
+
+└ Reset password - own account (not allowed)
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/reset-password/1 [400 Bad Request, 212B, 189ms]
+  √  Status is 400 Bad Request
+  √  Error message mentions "Change Password"
+
+└ Reset password - user not found
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/reset-password/99999 [404 Not Found, 184B, 187ms]
+  √  Status is 404 Not Found
+
+□ 4. Classes, tracker & students
+└ Overview - Admin
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [200 OK, 4.4kB, 228ms]
+  √  Status is 200 OK
+  √  Response time under 3 seconds
+  √  5 sections
+  √  Each class has 5 subjects
+
+└ Overview - Teacher (not allowed)
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [403 Forbidden, 221B, 190ms]
+  √  Status is 403 Forbidden
+
+└ Tracker 8-B - Class Teacher Sania
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/tracker [200 OK, 1.97kB, 583ms]
+  √  Status is 200 OK
+  √  Tracker lists the 5 subjects
+  √  Each subject shows its teacher and progress
+
+└ Tracker 9-A - not her class
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/3/tracker [403 Forbidden, 221B, 195ms]
+  √  Status is 403 Forbidden
+  √  Error message mentions "Only the Class Teacher"
+
+└ Tracker - class not found
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/999/tracker [404 Not Found, 185B, 194ms]
+  √  Status is 404 Not Found
+
+└ Publish 8-B - subjects still pending
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/publish [409 Conflict, 226B, 191ms]
+  √  Status is 409 Conflict
+  √  Error message mentions "Still waiting for"
+
+└ Students of 8-B
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/students [200 OK, 491B, 206ms]
+  √  Status is 200 OK
+  √  At least 5 students
+
+└ Add student to 8-B
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/students [201 Created, 211B, 252ms]
+  √  Status is 201 Created
+  √  Roll number is padded to 06
+
+└ Add student - duplicate roll number
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/students [409 Conflict, 213B, 192ms]
+  √  Status is 409 Conflict
+  √  Error message mentions "already exists"
+
+└ Add student - empty name
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/students [400 Bad Request, 205B, 187ms]
+  √  Status is 400 Bad Request
+  √  Error message mentions "required"
+
+└ Tracker 8-B - submissions cleared after adding a student
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/tracker [200 OK, 1.98kB, 226ms]
+  √  Status is 200 OK
+  √  No subject is "submitted" any more
+
+□ 5. Marks upload & update
+└ My subjects - Teacher Sania
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [200 OK, 1.99kB, 246ms]
+  √  Status is 200 OK
+  √  Sania teaches 10 class-subjects
+
+└ My subjects - Admin (not a teacher)
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [403 Forbidden, 197B, 187ms]
+  √  Status is 403 Forbidden
+  √  Error message mentions "Only teachers"
+
+└ Marks of 8-B Chemistry
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/9/marks [200 OK, 762B, 244ms]
+  √  Status is 200 OK
+  √  Max marks is 60
+
+└ Save marks - above the maximum (61/60)
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/9/marks [400 Bad Request, 202B, 210ms]
+  √  Status is 400 Bad Request
+  √  Error message mentions "between 0 and 60"
+
+└ Submit marks - one student still empty
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/9/marks [400 Bad Request, 236B, 542ms]
+  √  Status is 400 Bad Request
+  √  Error message mentions "cannot submit"
+
+└ Submit marks - every student (success)
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/9/marks [200 OK, 178B, 225ms]
+  √  Status is 200 OK
+  √  Says submitted
+
+└ Marks of another teacher's subject
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/1/marks [403 Forbidden, 211B, 192ms]
+  √  Status is 403 Forbidden
+  √  Error message mentions "not assigned to you"
+
+□ 6. Result cards & delete student
+└ Result card - Sarah (complete)
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/students/6/report-card [200 OK, 687B, 238ms]
+  √  Status is 200 OK
+  √  Complete card has a percentage and a grade
+  √  Total is out of 380
+
+└ Result card - Ahmed (Physics still pending)
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/students/7/report-card [200 OK, 690B, 193ms]
+  √  Status is 200 OK
+  √  Incomplete card has no grade yet
+
+└ Result card - teacher of another class (not allowed)
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/students/6/report-card [403 Forbidden, 221B, 190ms]
+  √  Status is 403 Forbidden
+
+└ Delete student - the one added earlier
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/students/26 [200 OK, 180B, 225ms]
+  √  Status is 200 OK
+  √  Error message mentions "deleted"
+
+└ Delete student - not found
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/students/99999 [404 Not Found, 187B, 189ms]
+  √  Status is 404 Not Found
+
+□ 7. Publish & lock results
+└ Publish 9-A - Class Teacher Maryam
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/3/publish [200 OK, 180B, 208ms]
+  √  Status is 200 OK
+  √  Error message mentions "published"
+
+└ Overview - Cards Ready now counts 9-A
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [200 OK, 4.4kB, 217ms]
+  √  Status is 200 OK
+  √  Cards Ready is at least 5
+
+└ Add student to locked 9-A
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/3/students [409 Conflict, 222B, 187ms]
+  √  Status is 409 Conflict
+  √  Error message mentions "published"
+
+└ Save marks in locked 9-A
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/12/marks [409 Conflict, 223B, 190ms]
+  √  Status is 409 Conflict
+  √  Error message mentions "locked"
+
+└ Publish 9-A - not the Class Teacher
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/3/publish [403 Forbidden, 212B, 197ms]
+  √  Status is 403 Forbidden
+
+└ Unpublish 9-A - Maryam (unlock again)
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/3/publish [200 OK, 182B, 216ms]
+  √  Status is 200 OK
+  √  Error message mentions "unpublished"
+
+┌─────────────────────────┬─────────────────────┬─────────────────────┐
+│                         │            executed │              failed │
+├─────────────────────────┼─────────────────────┼─────────────────────┤
+│              iterations │                   1 │                   0 │
+├─────────────────────────┼─────────────────────┼─────────────────────┤
+│                requests │                  52 │                   0 │
+├─────────────────────────┼─────────────────────┼─────────────────────┤
+│            test-scripts │                  52 │                   0 │
+├─────────────────────────┼─────────────────────┼─────────────────────┤
+│      prerequest-scripts │                   3 │                   0 │
+├─────────────────────────┼─────────────────────┼─────────────────────┤
+│              assertions │                 113 │                   0 │
+├─────────────────────────┴─────────────────────┴─────────────────────┤
+│ total run duration: 19.1s                                           │
+├─────────────────────────────────────────────────────────────────────┤
+│ total data received: 23.23kB (approx)                               │
+├─────────────────────────────────────────────────────────────────────┤
+│ average response time: 283ms [min: 187ms, max: 1244ms, s.d.: 178ms] │
+└─────────────────────────────────────────────────────────────────────┘
+
+Report: D:\Desktop\school_grading_app\postman\..\postman\reports\azure_test_report.html
