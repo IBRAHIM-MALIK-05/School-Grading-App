@@ -2,8 +2,9 @@
 // One error type for the whole app.
 // statusCode follows HTTP: 400 bad input, 401 not logged in / wrong password,
 // 403 not allowed, 404 not found, 409 conflict (e.g. class is locked).
-// The mock service throws it now; the real API service will throw it later,
-// so screens handle errors the same way in both milestones.
+// 0 = no answer from the server (API off / no internet / timeout).
+// ApiDataService turns every failed request into one of these,
+// so all screens show errors the same way.
 
 class AppException implements Exception {
   final int statusCode;

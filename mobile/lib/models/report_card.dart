@@ -1,5 +1,7 @@
 // lib/models/report_card.dart
 
+import 'json_helpers.dart';
+
 class ReportLine {
   final String subjectName;
   final int maxMarks;
@@ -10,6 +12,12 @@ class ReportLine {
     required this.maxMarks,
     this.obtained,
   });
+
+  factory ReportLine.fromJson(Map<String, dynamic> json) => ReportLine(
+        subjectName: json['subjectName'],
+        maxMarks: json['maxMarks'],
+        obtained: json['obtained'],
+      );
 }
 
 class ReportCard {
@@ -40,6 +48,22 @@ class ReportCard {
     required this.isComplete,
     required this.isPublished,
   });
+
+  factory ReportCard.fromJson(Map<String, dynamic> json) => ReportCard(
+        schoolName: json['schoolName'],
+        studentName: json['studentName'],
+        rollNo: json['rollNo'],
+        className: json['className'],
+        classTeacherName: json['classTeacherName'],
+        lines: listFromJson(json['lines'], ReportLine.fromJson),
+        totalObtained: json['totalObtained'],
+        totalMax: json['totalMax'],
+        // JSON numbers like 85 arrive as int, so convert to double
+        percentage: (json['percentage'] as num?)?.toDouble(),
+        grade: json['grade'],
+        isComplete: json['isComplete'],
+        isPublished: json['isPublished'],
+      );
 
   int get pendingSubjects => lines.where((l) => l.obtained == null).length;
 }

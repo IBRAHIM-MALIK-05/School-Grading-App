@@ -1,5 +1,7 @@
 // lib/models/student.dart
 
+import 'json_helpers.dart';
+
 class Student {
   final int id;
   final String fullName;
@@ -12,6 +14,13 @@ class Student {
     required this.rollNo,
     required this.classId,
   });
+
+  factory Student.fromJson(Map<String, dynamic> json) => Student(
+        id: json['id'],
+        fullName: json['fullName'],
+        rollNo: json['rollNo'],
+        classId: json['classId'],
+      );
 }
 
 // The students of one class + whether that class is locked.
@@ -27,4 +36,11 @@ class ClassStudents {
     required this.isPublished,
     required this.students,
   });
+
+  factory ClassStudents.fromJson(Map<String, dynamic> json) => ClassStudents(
+        classId: json['classId'],
+        className: json['className'],
+        isPublished: json['isPublished'],
+        students: listFromJson(json['students'], Student.fromJson),
+      );
 }

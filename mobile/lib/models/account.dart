@@ -16,6 +16,15 @@ class NewAccountRequest {
     this.classTeacherOfClassId,
     this.assignmentIds = const [],
   });
+
+  // The JSON body sent to POST /api/auth/register (AddUserDto)
+  Map<String, dynamic> toJson() => {
+        'fullName': fullName,
+        'role': role,
+        'contactEmail': contactEmail,
+        'classTeacherOfClassId': classTeacherOfClassId,
+        'assignmentIds': assignmentIds,
+      };
 }
 
 // What the server gives back: shown ONCE to the Admin to share.
@@ -31,4 +40,12 @@ class Credentials {
     required this.temporaryPassword,
     this.contactEmail,
   });
+
+  // From the API's CredentialsDto
+  factory Credentials.fromJson(Map<String, dynamic> json) => Credentials(
+        fullName: json['fullName'],
+        loginId: json['loginId'],
+        temporaryPassword: json['temporaryPassword'],
+        contactEmail: json['contactEmail'],
+      );
 }

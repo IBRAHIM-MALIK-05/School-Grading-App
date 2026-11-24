@@ -24,6 +24,18 @@ class AppUser {
     this.classTeacherOfClassName,
   });
 
+  // Builds a user from the API's JSON (UserDto)
+  factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
+        id: json['id'],
+        fullName: json['fullName'],
+        loginId: json['loginId'],
+        role: json['role'],
+        contactEmail: json['contactEmail'],
+        mustChangePassword: json['mustChangePassword'] ?? false,
+        classTeacherOfClassId: json['classTeacherOfClassId'],
+        classTeacherOfClassName: json['classTeacherOfClassName'],
+      );
+
   bool get isAdmin => role == 'admin';
   bool get isTeacher => role == 'teacher';
   bool get isVp => role == 'vp';

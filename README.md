@@ -35,11 +35,14 @@ With the API running: double-click `postman/run_tests_local.cmd` → 52 requests
 HTML report in `postman/reports/`. Or import the two JSON files in `postman/` into the Postman app.
 
 ## Run the app
+The app talks to the real API, so start XAMPP MySQL and the API first (see above).
 ```bash
 cd mobile
 flutter pub get
 flutter run -d chrome
 ```
+The server address is one line in `mobile/lib/services/api_config.dart`
+(`http://localhost:5080/api`; Android emulator: `http://10.0.2.2:5080/api`).
 
 ## Milestones (git tags)
 - `v0-original` – the original prototype (mock data, 5 screens)
@@ -47,3 +50,4 @@ flutter run -d chrome
 - `v2-local-db` – `school_grading` database in XAMPP + design
 - `v4-local-api` – ASP.NET Core Web API (.NET 10, EF Core code-first, JWT) on XAMPP MySQL
 - `v5-postman-tests` – Postman collection (52 requests, 113 tests) + Newman HTML report
+- `v7-live-flutter` – Flutter app on the real API + MySQL (mock data removed)

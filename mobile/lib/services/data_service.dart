@@ -1,7 +1,8 @@
 // lib/services/data_service.dart
 // The CONTRACT between the screens and the data.
-// Screens only talk to this abstract class, never to DummyDB or HTTP directly.
-//  - Milestone 1: MockDataService implements it with fake in-memory data.
+// Screens only talk to this abstract class, never to HTTP directly.
+//  - Milestone 1: MockDataService implemented it with fake in-memory data
+//    (deleted in Milestone 7; still visible in git tag v1-mock-ui).
 //  - Milestone 7: ApiDataService implements it with real HTTP calls.
 // Each method matches one endpoint of the .NET API (shown in the comments).
 

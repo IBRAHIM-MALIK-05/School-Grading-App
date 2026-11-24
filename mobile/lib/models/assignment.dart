@@ -1,6 +1,7 @@
 // lib/models/assignment.dart
 // A "teaching assignment" = one teacher teaches one subject in one class.
 
+import 'json_helpers.dart';
 import 'submission_state.dart';
 
 class TeacherAssignment {
@@ -28,6 +29,19 @@ class TeacherAssignment {
     required this.isClassPublished,
   });
 
+  factory TeacherAssignment.fromJson(Map<String, dynamic> json) => TeacherAssignment(
+        id: json['id'],
+        classId: json['classId'],
+        className: json['className'],
+        subjectId: json['subjectId'],
+        subjectName: json['subjectName'],
+        maxMarks: json['maxMarks'],
+        studentCount: json['studentCount'],
+        enteredCount: json['enteredCount'],
+        submittedAt: dateFromJson(json['submittedAt']),
+        isClassPublished: json['isClassPublished'],
+      );
+
   SubmissionState get state => submissionStateFrom(
         enteredCount: enteredCount,
         studentCount: studentCount,
@@ -48,6 +62,13 @@ class MarkRow {
     required this.rollNo,
     this.obtained,
   });
+
+  factory MarkRow.fromJson(Map<String, dynamic> json) => MarkRow(
+        studentId: json['studentId'],
+        studentName: json['studentName'],
+        rollNo: json['rollNo'],
+        obtained: json['obtained'],
+      );
 }
 
 // Everything the Marks Entry screen needs.
@@ -56,4 +77,9 @@ class AssignmentMarks {
   final List<MarkRow> rows;
 
   const AssignmentMarks({required this.assignment, required this.rows});
+
+  factory AssignmentMarks.fromJson(Map<String, dynamic> json) => AssignmentMarks(
+        assignment: TeacherAssignment.fromJson(json['assignment']),
+        rows: listFromJson(json['rows'], MarkRow.fromJson),
+      );
 }

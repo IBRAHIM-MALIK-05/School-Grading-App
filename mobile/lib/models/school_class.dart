@@ -2,6 +2,8 @@
 // A class/section (e.g. "Class 8 - B") with its subjects and status.
 // Used by the Admin (create account form) and the Principal/VP overview.
 
+import 'json_helpers.dart';
+
 class ClassSubject {
   final int assignmentId; // the row that links class + subject + teacher
   final int subjectId;
@@ -20,6 +22,16 @@ class ClassSubject {
     this.teacherName,
     required this.isSubmitted,
   });
+
+  factory ClassSubject.fromJson(Map<String, dynamic> json) => ClassSubject(
+        assignmentId: json['assignmentId'],
+        subjectId: json['subjectId'],
+        subjectName: json['subjectName'],
+        maxMarks: json['maxMarks'],
+        teacherId: json['teacherId'],
+        teacherName: json['teacherName'],
+        isSubmitted: json['isSubmitted'],
+      );
 }
 
 class SchoolClass {
@@ -42,6 +54,17 @@ class SchoolClass {
     required this.isPublished,
     required this.subjects,
   });
+
+  factory SchoolClass.fromJson(Map<String, dynamic> json) => SchoolClass(
+        id: json['id'],
+        gradeName: json['gradeName'],
+        section: json['section'],
+        classTeacherId: json['classTeacherId'],
+        classTeacherName: json['classTeacherName'],
+        studentCount: json['studentCount'],
+        isPublished: json['isPublished'],
+        subjects: listFromJson(json['subjects'], ClassSubject.fromJson),
+      );
 
   String get name => '$gradeName - $section';
 
@@ -75,4 +98,13 @@ class SchoolOverview {
     required this.pendingSubjects,
     required this.classes,
   });
+
+  factory SchoolOverview.fromJson(Map<String, dynamic> json) => SchoolOverview(
+        sections: json['sections'],
+        students: json['students'],
+        teachers: json['teachers'],
+        cardsReady: json['cardsReady'],
+        pendingSubjects: json['pendingSubjects'],
+        classes: listFromJson(json['classes'], SchoolClass.fromJson),
+      );
 }

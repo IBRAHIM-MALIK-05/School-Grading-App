@@ -4,4 +4,7 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- DEBUG builds only: allow plain http:// so the emulator can reach the
+         local API at http://10.0.2.2:5080. The Azure API uses https. -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>
