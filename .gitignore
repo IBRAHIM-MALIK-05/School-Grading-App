@@ -16,6 +16,7 @@ Thumbs.db
 *.suo
 # Never commit real secrets (DB passwords, JWT keys)
 **/appsettings.*.local.json
+*.local.json
 *.env
 
 # ---- Flutter (mobile/) ----
@@ -38,3 +39,8 @@ __pycache__/
 tools/node/
 tools/node-download/
 node_modules/
+
+# ---- portable Azure CLI + browser profile used for Azure Portal screenshots ----
+tools/azure-cli/
+tools/azure-cli-download/
+tools/.azure_browser_profile/

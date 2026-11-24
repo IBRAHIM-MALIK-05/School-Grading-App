@@ -1,0 +1,20 @@
+{
+  "resourceGroup": "rg-school-grading",
+  "region": "koreacentral",
+  "server": "school-grading-mysql-bcgi",
+  "host": "school-grading-mysql-bcgi.mysql.database.azure.com",
+  "adminUser": "gradingadmin",
+  "version": "8.4",
+  "tier": "Burstable",
+  "sku": "Standard_B1ms",
+  "storageGB": 20,
+  "storageAutoGrow": "Disabled",
+  "autoScaleIops": "Disabled",
+  "iops": 360,
+  "highAvailability": "Disabled",
+  "backupRetentionDays": 7,
+  "geoRedundantBackup": "Disabled",
+  "publicAccess": "Enabled",
+  "state": "Ready",
+  "budget": "created ($1/month, alerts at 50% and 100% to the subscription Owner)"
+}

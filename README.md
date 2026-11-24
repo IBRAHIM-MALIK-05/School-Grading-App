@@ -30,6 +30,17 @@ A school result-management system: **Flutter app → ASP.NET Core Web API (.NET 
 First time only (creates the tables + demo data): Visual Studio → *Package Manager Console* →
 `Update-Database`  (or `dotnet tool restore` then `dotnet ef database update` in `api/SchoolGradingApi`).
 
+## Cloud database (Azure Database for MySQL)
+- Server `school-grading-mysql-bcgi` in resource group `rg-school-grading` (Korea Central):
+  MySQL 8.4, Burstable **B1ms**, 20 GB (auto-grow off, auto-scale IOPS off), no HA,
+  7-day locally-redundant backups — all inside the Azure free allowance (750 h + 32 GB), with a $1 budget alert.
+- Created with the Azure CLI: `tools/azure/create_azure_mysql.py` (settings in `tools/azure/azure_resources.json`).
+- Data: phpMyAdmin export `database/03_school_grading_export_for_azure.sql`, imported and checked
+  row-for-row against XAMPP by `tools/azure/import_to_azure.py` (TLS, certificate verified).
+- The admin password lives only in the git-ignored `tools/azure/azure_mysql.local.json`.
+- **Save free hours:** Portal → the server → **Stop** when not testing, **Start** before a demo
+  (Azure starts a stopped server again by itself after 30 days).
+
 ## Test the API (Postman / Newman)
 With the API running: double-click `postman/run_tests_local.cmd` → 52 requests, 113 tests,
 HTML report in `postman/reports/`. Or import the two JSON files in `postman/` into the Postman app.
@@ -48,6 +59,7 @@ The server address is one line in `mobile/lib/services/api_config.dart`
 - `v0-original` – the original prototype (mock data, 5 screens)
 - `v1-mock-ui` – full multi-role UI on mock data
 - `v2-local-db` – `school_grading` database in XAMPP + design
+- `v3-azure-db` – the same database on Azure Database for MySQL Flexible Server (8.4, B1ms)
 - `v4-local-api` – ASP.NET Core Web API (.NET 10, EF Core code-first, JWT) on XAMPP MySQL
 - `v5-postman-tests` – Postman collection (52 requests, 113 tests) + Newman HTML report
 - `v7-live-flutter` – Flutter app on the real API + MySQL (mock data removed)
