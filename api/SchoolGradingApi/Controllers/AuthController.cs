@@ -103,6 +103,9 @@ namespace SchoolGradingApi.Controllers
                 return Error(400, "One or more selected subjects do not exist.");
 
             // ----- create the user -----
+            // One transaction: if giving the class / subjects fails, the new user is rolled back too
+            // (no half-created account without its duties).
+            using var transaction = _db.Database.BeginTransaction();
             var existingLoginIds = _db.Users.Select(u => u.LoginId).ToList();
             var temporaryPassword = PasswordHelper.GenerateTemporaryPassword();
 
@@ -129,6 +132,7 @@ namespace SchoolGradingApi.Controllers
                 assignment.TeacherId = user.Id;
             }
             _db.SaveChanges();
+            transaction.Commit();                   // both saves succeed together (or neither)
 
             // 201 Created + the details the Admin will share (shown only once)
             return StatusCode(201, new CredentialsDto

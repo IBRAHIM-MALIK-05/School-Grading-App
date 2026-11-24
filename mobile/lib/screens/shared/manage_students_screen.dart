@@ -59,11 +59,13 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
         }
       }
       final sortedIds = options.keys.toList()..sort();
+      if (!mounted) return; // screen closed while loading
       setState(() {
         _classOptions = {for (final id in sortedIds) id: options[id]!};
         if (sortedIds.isNotEmpty) _selectClass(sortedIds.first);
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _optionsError = e);
     }
   }

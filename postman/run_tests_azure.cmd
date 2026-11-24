@@ -16,9 +16,16 @@ call npx newman run "%ROOT%\postman\SchoolGrading.postman_collection.json" ^
   -e "%ROOT%\postman\SchoolGrading_Azure.postman_environment.json" ^
   --timeout-request 60000 ^
   -r cli,htmlextra ^
+  --reporter-htmlextra-omitHeaders Authorization ^
   --reporter-htmlextra-export "%ROOT%\postman\reports\azure_test_report.html" ^
   --reporter-htmlextra-title "School Grading API - Azure test report" ^
   --reporter-htmlextra-browserTitle "School Grading API tests (Azure)"
 
+set RESULT=%ERRORLEVEL%
+
+REM Remove every JWT (login token) from the HTML report - it is committed to a public repo
+node "%ROOT%\postman\redact_tokens.js" "%ROOT%\postman\reports\azure_test_report.html"
+
 echo.
 echo Report: %ROOT%\postman\reports\azure_test_report.html
+exit /b %RESULT%

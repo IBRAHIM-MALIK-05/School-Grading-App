@@ -6,29 +6,23 @@ import 'json_helpers.dart';
 
 class ClassSubject {
   final int assignmentId; // the row that links class + subject + teacher
-  final int subjectId;
   final String subjectName;
   final int maxMarks;
-  final int? teacherId;
   final String? teacherName;
   final bool isSubmitted;
 
   const ClassSubject({
     required this.assignmentId,
-    required this.subjectId,
     required this.subjectName,
     required this.maxMarks,
-    this.teacherId,
     this.teacherName,
     required this.isSubmitted,
   });
 
   factory ClassSubject.fromJson(Map<String, dynamic> json) => ClassSubject(
         assignmentId: json['assignmentId'],
-        subjectId: json['subjectId'],
         subjectName: json['subjectName'],
         maxMarks: json['maxMarks'],
-        teacherId: json['teacherId'],
         teacherName: json['teacherName'],
         isSubmitted: json['isSubmitted'],
       );

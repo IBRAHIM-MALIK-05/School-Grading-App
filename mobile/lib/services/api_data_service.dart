@@ -47,8 +47,8 @@ class ApiDataService implements DataService {
     try {
       final request = http.Request(method, url)..headers.addAll(headers);
       if (body != null) request.body = jsonEncode(body);
-      final streamed = await request.send().timeout(apiTimeout);
-      response = await http.Response.fromStream(streamed);
+      // ONE time limit for the whole exchange: sending AND reading the answer
+      response = await _sendAndRead(request).timeout(apiTimeout);
     } on TimeoutException {
       throw AppException(0, 'The server is taking too long to answer. Please try again.');
     } on http.ClientException {
@@ -56,10 +56,24 @@ class ApiDataService implements DataService {
       throw AppException(0, 'Cannot connect to the server. Check your internet connection and try again.');
     }
 
-    final data = response.body.isEmpty ? null : jsonDecode(response.body);
+    // The body is normally JSON, but a gateway error page (e.g. Azure 502/503 while
+    // the free server is starting) is HTML -> do not crash, show a clear message.
+    dynamic data;
+    try {
+      data = response.body.isEmpty ? null : jsonDecode(response.body);
+    } on FormatException {
+      data = null;
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        throw AppException(response.statusCode, 'The server sent an unexpected answer. Please try again.');
+      }
+    }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return data;
+    }
+    if (data == null && response.statusCode >= 502 && response.statusCode <= 504) {
+      throw AppException(response.statusCode,
+          'The server is starting up or busy. Please wait a moment and try again.');
     }
 
     // Our API sends { "message": "..." }.
@@ -74,6 +88,11 @@ class ApiDataService implements DataService {
       message = 'Your session has expired. Please log out and log in again.';
     }
     throw AppException(response.statusCode, message);
+  }
+
+  Future<http.Response> _sendAndRead(http.Request request) async {
+    final streamed = await request.send();
+    return http.Response.fromStream(streamed);
   }
 
   // ======================= Auth =======================

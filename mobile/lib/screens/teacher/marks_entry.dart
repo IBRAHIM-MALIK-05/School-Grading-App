@@ -58,6 +58,9 @@ class _MarksEntryScreenState extends State<MarksEntryScreen> {
     });
     try {
       final data = await dataService.getAssignmentMarks(widget.assignmentId);
+      // The user may have left this screen while we waited: then dispose() already
+      // ran, so creating new controllers / focus nodes now would leak them.
+      if (!mounted) return;
       // (re)create a controller for every student, pre-filled with saved marks
       for (final c in _controllers) {
         c.dispose();
@@ -72,7 +75,7 @@ class _MarksEntryScreenState extends State<MarksEntryScreen> {
       _focusNodes
         ..clear()
         ..addAll(data.rows.map((_) => FocusNode()));
-      if (mounted) setState(() => _data = data);
+      setState(() => _data = data);
     } catch (e) {
       if (mounted) setState(() => _loadError = e);
     }

@@ -8,7 +8,6 @@ class TeacherAssignment {
   final int id;
   final int classId;
   final String className; // "Class 8 - B"
-  final int subjectId;
   final String subjectName;
   final int maxMarks;
   final int studentCount;
@@ -20,7 +19,6 @@ class TeacherAssignment {
     required this.id,
     required this.classId,
     required this.className,
-    required this.subjectId,
     required this.subjectName,
     required this.maxMarks,
     required this.studentCount,
@@ -33,7 +31,6 @@ class TeacherAssignment {
         id: json['id'],
         classId: json['classId'],
         className: json['className'],
-        subjectId: json['subjectId'],
         subjectName: json['subjectName'],
         maxMarks: json['maxMarks'],
         studentCount: json['studentCount'],

@@ -9,8 +9,13 @@ namespace SchoolGradingApi.Dtos
     }
 
     // POST /api/classes/{id}/students
+    // Limits match the database columns (students.full_name 100, students.roll_no 10).
+    // They are checked in ClassesController.AddStudent, so the app gets a clear { message } 400.
     public class AddStudentDto
     {
+        public const int MaxNameLength = 100;
+        public const int MaxRollNoLength = 10;
+
         public string FullName { get; set; } = "";
         public string RollNo { get; set; } = "";
     }

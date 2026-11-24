@@ -4,7 +4,7 @@ School Grading API
 
 □ 1. Auth - Login
 └ Login - Admin
-  POST http://localhost:5080/api/auth/login [200 OK, 903B, 173ms]
+  POST http://localhost:5080/api/auth/login [200 OK, 903B, 163ms]
   √  Status is 200 OK
   √  Response time under 3 seconds
   √  Response has a JWT token
@@ -12,7 +12,7 @@ School Grading API
   √  Role is admin
 
 └ Login - Principal / VP
-  POST http://localhost:5080/api/auth/login [200 OK, 879B, 146ms]
+  POST http://localhost:5080/api/auth/login [200 OK, 879B, 148ms]
   √  Status is 200 OK
   √  Response time under 3 seconds
   √  Response has a JWT token
@@ -20,7 +20,7 @@ School Grading API
   √  Role is vp
 
 └ Login - Teacher Sania (Class Teacher of 8-B)
-  POST http://localhost:5080/api/auth/login [200 OK, 916B, 169ms]
+  POST http://localhost:5080/api/auth/login [200 OK, 916B, 133ms]
   √  Status is 200 OK
   √  Response time under 3 seconds
   √  Response has a JWT token
@@ -28,20 +28,20 @@ School Grading API
   √  Sania is Class Teacher of Class 8 - B
 
 └ Login - Teacher Maryam (Class Teacher of 9-A)
-  POST http://localhost:5080/api/auth/login [200 OK, 920B, 133ms]
+  POST http://localhost:5080/api/auth/login [200 OK, 920B, 130ms]
   √  Status is 200 OK
   √  Response time under 3 seconds
   √  Response has a JWT token
   √  Password hash is never returned
 
 └ Login - wrong password
-  POST http://localhost:5080/api/auth/login [401 Unauthorized, 201B, 131ms]
+  POST http://localhost:5080/api/auth/login [401 Unauthorized, 201B, 144ms]
   √  Status is 401 Unauthorized
   √  Error message mentions "Invalid Login ID or password"
 
 □ 2. Auth - Create account & first login
 └ Register - new Teacher (Admin)
-  POST http://localhost:5080/api/auth/register [201 Created, 280B, 139ms]
+  POST http://localhost:5080/api/auth/register [201 Created, 281B, 151ms]
   √  Status is 201 Created
   √  Login ID is generated (…@school.com)
   √  Temporary password has 10 characters
@@ -52,26 +52,26 @@ School Grading API
   √  Error message mentions "already has a Class Teacher"
 
 └ Register - invalid email
-  POST http://localhost:5080/api/auth/register [400 Bad Request, 206B, 3ms]
+  POST http://localhost:5080/api/auth/register [400 Bad Request, 206B, 4ms]
   √  Status is 400 Bad Request
   √  Error message mentions "valid email"
 
 └ Register - by a Teacher (not allowed)
-  POST http://localhost:5080/api/auth/register [403 Forbidden, 204B, 3ms]
+  POST http://localhost:5080/api/auth/register [403 Forbidden, 204B, 4ms]
   √  Status is 403 Forbidden
   √  Error message mentions "Only the Admin"
 
 └ Register - without a token
-  POST http://localhost:5080/api/auth/register [401 Unauthorized, 128B, 1ms]
+  POST http://localhost:5080/api/auth/register [401 Unauthorized, 128B, 2ms]
   √  Status is 401 Unauthorized
 
 └ Login - new Teacher with temporary password
-  POST http://localhost:5080/api/auth/login [200 OK, 927B, 151ms]
+  POST http://localhost:5080/api/auth/login [200 OK, 929B, 131ms]
   √  Status is 200 OK
   √  Must change password is true
 
 └ New Teacher - blocked until password is changed
-  GET http://localhost:5080/api/assignments/mine [403 Forbidden, 213B, 6ms]
+  GET http://localhost:5080/api/assignments/mine [403 Forbidden, 213B, 3ms]
   √  Status is 403 Forbidden
   √  Error message mentions "change your temporary password"
 
@@ -81,23 +81,23 @@ School Grading API
   √  Error message mentions "one letter and one number"
 
 └ Change password - wrong current password
-  POST http://localhost:5080/api/auth/change-password [400 Bad Request, 201B, 131ms]
+  POST http://localhost:5080/api/auth/change-password [400 Bad Request, 201B, 128ms]
   √  Status is 400 Bad Request
   √  Error message mentions "Current password is incorrect"
 
 └ Change password - success
-  POST http://localhost:5080/api/auth/change-password [200 OK, 353B, 264ms]
+  POST http://localhost:5080/api/auth/change-password [200 OK, 354B, 273ms]
   √  Status is 200 OK
   √  Must change password is now false
 
 └ New Teacher - now allowed in
-  GET http://localhost:5080/api/assignments/mine [200 OK, 150B, 6ms]
+  GET http://localhost:5080/api/assignments/mine [200 OK, 150B, 4ms]
   √  Status is 200 OK
   √  Returns a list
 
 □ 3. Users & password reset (Admin)
 └ Users - list (Admin)
-  GET http://localhost:5080/api/users [200 OK, 1.5kB, 24ms]
+  GET http://localhost:5080/api/users [200 OK, 1.71kB, 4ms]
   √  Status is 200 OK
   √  Response time under 3 seconds
   √  At least the 6 demo users
@@ -105,7 +105,7 @@ School Grading API
   √  New Teacher is in the list
 
 └ Users - list as Principal/VP (not allowed)
-  GET http://localhost:5080/api/users [403 Forbidden, 202B, 2ms]
+  GET http://localhost:5080/api/users [403 Forbidden, 202B, 3ms]
   √  Status is 403 Forbidden
 
 └ Users - list without a token
@@ -113,12 +113,12 @@ School Grading API
   √  Status is 401 Unauthorized
 
 └ Reset password - Admin resets the new Teacher
-  POST http://localhost:5080/api/auth/reset-password/7 [200 OK, 275B, 146ms]
+  POST http://localhost:5080/api/auth/reset-password/8 [200 OK, 276B, 144ms]
   √  Status is 200 OK
   √  A new temporary password is returned
 
 └ Login - old password stops working after reset
-  POST http://localhost:5080/api/auth/login [401 Unauthorized, 201B, 132ms]
+  POST http://localhost:5080/api/auth/login [401 Unauthorized, 201B, 130ms]
   √  Status is 401 Unauthorized
 
 └ Reset password - own account (not allowed)
@@ -127,12 +127,12 @@ School Grading API
   √  Error message mentions "Change Password"
 
 └ Reset password - user not found
-  POST http://localhost:5080/api/auth/reset-password/99999 [404 Not Found, 184B, 3ms]
+  POST http://localhost:5080/api/auth/reset-password/99999 [404 Not Found, 184B, 4ms]
   √  Status is 404 Not Found
 
 □ 4. Classes, tracker & students
 └ Overview - Admin
-  GET http://localhost:5080/api/classes [200 OK, 4.4kB, 23ms]
+  GET http://localhost:5080/api/classes [200 OK, 4.4kB, 9ms]
   √  Status is 200 OK
   √  Response time under 3 seconds
   √  5 sections
@@ -143,7 +143,7 @@ School Grading API
   √  Status is 403 Forbidden
 
 └ Tracker 8-B - Class Teacher Sania
-  GET http://localhost:5080/api/classes/2/tracker [200 OK, 1.97kB, 11ms]
+  GET http://localhost:5080/api/classes/2/tracker [200 OK, 1.94kB, 10ms]
   √  Status is 200 OK
   √  Tracker lists the 5 subjects
   √  Each subject shows its teacher and progress
@@ -154,11 +154,11 @@ School Grading API
   √  Error message mentions "Only the Class Teacher"
 
 └ Tracker - class not found
-  GET http://localhost:5080/api/classes/999/tracker [404 Not Found, 185B, 3ms]
+  GET http://localhost:5080/api/classes/999/tracker [404 Not Found, 185B, 4ms]
   √  Status is 404 Not Found
 
 └ Publish 8-B - subjects still pending
-  PUT http://localhost:5080/api/classes/2/publish [409 Conflict, 226B, 5ms]
+  PUT http://localhost:5080/api/classes/2/publish [409 Conflict, 246B, 6ms]
   √  Status is 409 Conflict
   √  Error message mentions "Still waiting for"
 
@@ -168,28 +168,28 @@ School Grading API
   √  At least 5 students
 
 └ Add student to 8-B
-  POST http://localhost:5080/api/classes/2/students [201 Created, 211B, 22ms]
+  POST http://localhost:5080/api/classes/2/students [201 Created, 211B, 7ms]
   √  Status is 201 Created
   √  Roll number is padded to 06
 
 └ Add student - duplicate roll number
-  POST http://localhost:5080/api/classes/2/students [409 Conflict, 213B, 5ms]
+  POST http://localhost:5080/api/classes/2/students [409 Conflict, 213B, 4ms]
   √  Status is 409 Conflict
   √  Error message mentions "already exists"
 
 └ Add student - empty name
-  POST http://localhost:5080/api/classes/2/students [400 Bad Request, 205B, 6ms]
+  POST http://localhost:5080/api/classes/2/students [400 Bad Request, 205B, 3ms]
   √  Status is 400 Bad Request
   √  Error message mentions "required"
 
 └ Tracker 8-B - submissions cleared after adding a student
-  GET http://localhost:5080/api/classes/2/tracker [200 OK, 1.98kB, 10ms]
+  GET http://localhost:5080/api/classes/2/tracker [200 OK, 1.98kB, 9ms]
   √  Status is 200 OK
   √  No subject is "submitted" any more
 
 □ 5. Marks upload & update
 └ My subjects - Teacher Sania
-  GET http://localhost:5080/api/assignments/mine [200 OK, 1.99kB, 22ms]
+  GET http://localhost:5080/api/assignments/mine [200 OK, 1.99kB, 17ms]
   √  Status is 200 OK
   √  Sania teaches 10 class-subjects
 
@@ -199,17 +199,17 @@ School Grading API
   √  Error message mentions "Only teachers"
 
 └ Marks of 8-B Chemistry
-  GET http://localhost:5080/api/assignments/9/marks [200 OK, 762B, 8ms]
+  GET http://localhost:5080/api/assignments/9/marks [200 OK, 754B, 6ms]
   √  Status is 200 OK
   √  Max marks is 60
 
 └ Save marks - above the maximum (61/60)
-  PUT http://localhost:5080/api/assignments/9/marks [400 Bad Request, 202B, 5ms]
+  PUT http://localhost:5080/api/assignments/9/marks [400 Bad Request, 202B, 6ms]
   √  Status is 400 Bad Request
   √  Error message mentions "between 0 and 60"
 
 └ Submit marks - one student still empty
-  PUT http://localhost:5080/api/assignments/9/marks [400 Bad Request, 236B, 26ms]
+  PUT http://localhost:5080/api/assignments/9/marks [400 Bad Request, 236B, 18ms]
   √  Status is 400 Bad Request
   √  Error message mentions "cannot submit"
 
@@ -219,28 +219,28 @@ School Grading API
   √  Says submitted
 
 └ Marks of another teacher's subject
-  GET http://localhost:5080/api/assignments/1/marks [403 Forbidden, 211B, 4ms]
+  GET http://localhost:5080/api/assignments/1/marks [403 Forbidden, 211B, 3ms]
   √  Status is 403 Forbidden
   √  Error message mentions "not assigned to you"
 
 □ 6. Result cards & delete student
 └ Result card - Sarah (complete)
-  GET http://localhost:5080/api/students/6/report-card [200 OK, 687B, 4ms]
+  GET http://localhost:5080/api/students/6/report-card [200 OK, 687B, 5ms]
   √  Status is 200 OK
   √  Complete card has a percentage and a grade
   √  Total is out of 380
 
 └ Result card - Ahmed (Physics still pending)
-  GET http://localhost:5080/api/students/7/report-card [200 OK, 690B, 4ms]
+  GET http://localhost:5080/api/students/7/report-card [200 OK, 690B, 5ms]
   √  Status is 200 OK
   √  Incomplete card has no grade yet
 
 └ Result card - teacher of another class (not allowed)
-  GET http://localhost:5080/api/students/6/report-card [403 Forbidden, 221B, 4ms]
+  GET http://localhost:5080/api/students/6/report-card [403 Forbidden, 221B, 5ms]
   √  Status is 403 Forbidden
 
 └ Delete student - the one added earlier
-  DELETE http://localhost:5080/api/students/26 [200 OK, 180B, 19ms]
+  DELETE http://localhost:5080/api/students/27 [200 OK, 180B, 16ms]
   √  Status is 200 OK
   √  Error message mentions "deleted"
 
@@ -250,31 +250,31 @@ School Grading API
 
 □ 7. Publish & lock results
 └ Publish 9-A - Class Teacher Maryam
-  PUT http://localhost:5080/api/classes/3/publish [200 OK, 180B, 7ms]
+  PUT http://localhost:5080/api/classes/3/publish [200 OK, 180B, 9ms]
   √  Status is 200 OK
   √  Error message mentions "published"
 
 └ Overview - Cards Ready now counts 9-A
-  GET http://localhost:5080/api/classes [200 OK, 4.4kB, 10ms]
+  GET http://localhost:5080/api/classes [200 OK, 4.4kB, 8ms]
   √  Status is 200 OK
   √  Cards Ready is at least 5
 
 └ Add student to locked 9-A
-  POST http://localhost:5080/api/classes/3/students [409 Conflict, 222B, 5ms]
+  POST http://localhost:5080/api/classes/3/students [409 Conflict, 222B, 4ms]
   √  Status is 409 Conflict
   √  Error message mentions "published"
 
 └ Save marks in locked 9-A
-  PUT http://localhost:5080/api/assignments/12/marks [409 Conflict, 223B, 4ms]
+  PUT http://localhost:5080/api/assignments/12/marks [409 Conflict, 223B, 3ms]
   √  Status is 409 Conflict
   √  Error message mentions "locked"
 
 └ Publish 9-A - not the Class Teacher
-  PUT http://localhost:5080/api/classes/3/publish [403 Forbidden, 212B, 5ms]
+  PUT http://localhost:5080/api/classes/3/publish [403 Forbidden, 212B, 4ms]
   √  Status is 403 Forbidden
 
 └ Unpublish 9-A - Maryam (unlock again)
-  PUT http://localhost:5080/api/classes/3/publish [200 OK, 182B, 18ms]
+  PUT http://localhost:5080/api/classes/3/publish [200 OK, 182B, 16ms]
   √  Status is 200 OK
   √  Error message mentions "unpublished"
 
@@ -291,11 +291,12 @@ School Grading API
 ├─────────────────────────┼───────────────────┼──────────────────┤
 │              assertions │               113 │                0 │
 ├─────────────────────────┴───────────────────┴──────────────────┤
-│ total run duration: 6.6s                                       │
+│ total run duration: 6.5s                                       │
 ├────────────────────────────────────────────────────────────────┤
-│ total data received: 23.23kB (approx)                          │
+│ total data received: 23.43kB (approx)                          │
 ├────────────────────────────────────────────────────────────────┤
-│ average response time: 41ms [min: 1ms, max: 264ms, s.d.: 64ms] │
+│ average response time: 39ms [min: 1ms, max: 273ms, s.d.: 63ms] │
 └────────────────────────────────────────────────────────────────┘
+D:\Desktop\school_grading_app\postman\..\postman\reports\local_test_report.html: 5 token(s) redacted, 0 left
 
 Report: D:\Desktop\school_grading_app\postman\..\postman\reports\local_test_report.html

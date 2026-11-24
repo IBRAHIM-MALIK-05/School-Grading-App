@@ -95,8 +95,10 @@ namespace SchoolGradingApi.Controllers
 
             if (dto.Publish)
             {
+                // A subject is ready only if it was submitted AND every student really has a mark
+                int studentCount = schoolClass.Students.Count;
                 var pending = schoolClass.Assignments
-                    .Where(a => a.SubmittedAt == null)
+                    .Where(a => a.SubmittedAt == null || CountEnteredMarks(schoolClass.Id, a.SubjectId) < studentCount)
                     .OrderBy(a => a.SubjectId)
                     .Select(a => a.Subject!.Name)
                     .ToList();
@@ -148,10 +150,18 @@ namespace SchoolGradingApi.Controllers
             if (schoolClass == null) return Error(404, "Class not found.");
             if (!CanManageStudents(me, schoolClass)) return Error(403, "You can only manage students of your own classes.");
 
-            var fullName = dto.FullName.Trim();
-            var rollNo = dto.RollNo.Trim();
+            var fullName = (dto.FullName ?? "").Trim();
+            var rollNo = (dto.RollNo ?? "").Trim();
             if (fullName == "" || rollNo == "") return Error(400, "Name and roll number are required.");
-            if (int.TryParse(rollNo, out int number)) rollNo = number.ToString("00");   // 7 -> "07"
+            if (fullName.Length > AddStudentDto.MaxNameLength)
+                return Error(400, "Name can be at most " + AddStudentDto.MaxNameLength + " characters.");
+            if (int.TryParse(rollNo, out int number))
+            {
+                if (number < 0) return Error(400, "Roll number cannot be negative.");
+                rollNo = number.ToString("00");   // 7 -> "07"
+            }
+            if (rollNo.Length > AddStudentDto.MaxRollNoLength)
+                return Error(400, "Roll number can be at most " + AddStudentDto.MaxRollNoLength + " characters.");
 
             if (schoolClass.ResultsPublishedAt != null)
                 return Error(409, "Results of " + DtoMapper.ClassName(schoolClass) + " are published. Unpublish first.");

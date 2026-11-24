@@ -157,22 +157,21 @@ namespace SchoolGradingApi.Controllers
                 }
             }
 
-            // 3) Submitted or not?
+            // 3) Submitted or not?  An incomplete subject can never stay "submitted"
+            //    (e.g. a mark was cleared), whether this was a draft save or a failed submit.
             int missing = studentIds.Count - existingMarks.Count;
-            if (dto.Submit)
+            if (missing > 0)
             {
-                if (missing > 0)
-                {
-                    _db.SaveChanges();   // keep what was typed
-                    return Error(400, "Marks saved, but cannot submit: " + missing + " student(s) still have no marks.");
-                }
+                assignment.SubmittedAt = null;
+            }
+            else if (dto.Submit)
+            {
                 assignment.SubmittedAt = DateTime.UtcNow;
             }
-            else if (missing > 0)
-            {
-                assignment.SubmittedAt = null;   // a removed mark makes it incomplete again
-            }
-            _db.SaveChanges();
+            _db.SaveChanges();   // one save: the typed marks + the submitted flag together
+
+            if (dto.Submit && missing > 0)
+                return Error(400, "Marks saved, but cannot submit: " + missing + " student(s) still have no marks.");
 
             return Ok(new { message = dto.Submit ? "Marks submitted." : "Draft saved." });
         }
