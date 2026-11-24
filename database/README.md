@@ -143,4 +143,20 @@ Business rules (marks between 0 and max, "cannot edit a published class",
 |---|---|
 | `01_create_database.sql` | Creates the empty database with the right collation (same as the phpMyAdmin step) |
 | `README.md` | This design document |
+| `02_initial_create_generated_by_ef.sql` | The SQL that EF Core generated from the C# entities (what Update-Database ran) – for reading only |
 | *(Milestone 3)* `school_grading_export.sql` | phpMyAdmin export used to migrate to Azure |
+
+## How the tables were created (Milestone 4)
+1. `Add-Migration InitialCreate` (CLI: `dotnet ef migrations add InitialCreate`) – EF Core
+   compares the entities + `AppDbContext` with an empty database and writes
+   `Migrations/…_InitialCreate.cs` (C# code that creates the 6 tables + inserts demo data).
+2. `Update-Database` (CLI: `dotnet ef database update`) – runs that migration on XAMPP MySQL
+   and records it in the `__EFMigrationsHistory` table, so it is never applied twice.
+
+**XAMPP note:** XAMPP ships **MariaDB 10.4**, not MySQL 8. One command EF uses
+before migrating (`GET_LOCK(..., -1)`) behaves differently on MariaDB, so the API
+has a tiny EF Core *interceptor* (`api/SchoolGradingApi/database/MariaDbFix.cs`)
+that adjusts only that command. Nothing changes on MySQL 8 / Azure.
+
+**Reset to clean demo data:** drop `school_grading`, run `01_create_database.sql`,
+then `Update-Database` again.

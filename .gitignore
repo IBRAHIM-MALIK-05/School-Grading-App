@@ -30,3 +30,6 @@ mobile/android/.gradle/
 # ---- Python tools (screenshots / documents) ----
 tools/.venv/
 __pycache__/
+
+# ---- local logs ----
+*.log
