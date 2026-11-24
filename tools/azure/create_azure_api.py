@@ -11,6 +11,7 @@ Secrets are read from / written to git-ignored files only:
   tools/azure/publish_profile.local.xml   (deployment credentials for GitHub Actions)
 
     tools\\.venv\\Scripts\\python -I tools\\azure\\create_azure_api.py
+    tools\\.venv\\Scripts\\python -I tools\\azure\\create_azure_api.py --rotate-jwt   (new JWT secret)
 """
 
 import json
@@ -138,5 +139,23 @@ def main():
     print("\nsaved m6_01_az_cli_create_app_service.png")
 
 
+def rotate_jwt_key():
+    """New production JWT secret: every token issued before (e.g. in test reports) stops working."""
+    api = json.loads(API_RESOURCES.read_text(encoding="utf-8"))
+    new_key = "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(64))
+    API_SECRETS.write_text(json.dumps({"app": api["app"], "jwtKey": new_key}, indent=2), encoding="utf-8")
+    settings_file = HERE / "app_settings.local.json"
+    settings_file.write_text(json.dumps([{"name": "Jwt__Key", "value": new_key, "slotSetting": False}]),
+                             encoding="utf-8")
+    try:
+        az("webapp", "config", "appsettings", "set", "--resource-group", api["resourceGroup"],
+           "--name", api["app"], "--settings", f"@{settings_file}", parse=False)
+    finally:
+        settings_file.unlink(missing_ok=True)
+    # restart so the running app loads the new key straight away
+    az("webapp", "restart", "--resource-group", api["resourceGroup"], "--name", api["app"], parse=False)
+    print("JWT key rotated and app restarted - tokens issued before now are rejected (401).")
+
+
 if __name__ == "__main__":
-    main()
+    rotate_jwt_key() if "--rotate-jwt" in sys.argv else main()

@@ -3,10 +3,13 @@
 | File | What it is |
 |---|---|
 | `SchoolGrading.postman_collection.json` | 52 requests in 7 folders, each with test scripts (113 checks in total) |
-| `SchoolGrading_Local.postman_environment.json` | `baseUrl = http://localhost:5080/api` (an **Azure** environment is added at deployment) |
-| `run_tests_local.cmd` | Runs the whole collection with **Newman** and writes the HTML report |
+| `SchoolGrading_Local.postman_environment.json` | `baseUrl = http://localhost:5080/api` |
+| `SchoolGrading_Azure.postman_environment.json` | `baseUrl = https://school-grading-api-bcgi.azurewebsites.net/api` (live cloud API) |
+| `run_tests_local.cmd` | Runs the whole collection with **Newman** against the local API and writes the HTML report |
+| `run_tests_azure.cmd` | The same against **Azure** (wakes up the free F1 server first) |
 | `reports/local_test_report.html` | Latest HTML report (open in a browser) |
 | `reports/local_cli_output.txt` | The same run as plain text |
+| `reports/azure_test_report.html`, `reports/azure_cli_output.txt` | Latest run against Azure (52 requests, 113 tests, 0 failures) |
 
 ## Run in the Postman app
 1. Postman → **Import** → select both JSON files.
@@ -41,3 +44,9 @@ Node.js in `tools/node` and Newman in `tools/postman-runner` – nothing is inst
 The collection cleans up after itself (deletes the student it adds, unpublishes 9-A),
 so it can be run again and again. Each run adds one new teacher account (`ali@school.com`,
 `ali2@school.com`, …).
+
+
+## Against Azure
+Start the Azure MySQL server first (Portal → server → **Start**), then double-click
+`run_tests_azure.cmd`. Afterwards put the cloud data back to the clean demo data:
+`tools\.venv\Scripts\python -I tools\azure\import_to_azure.py --reset`.
