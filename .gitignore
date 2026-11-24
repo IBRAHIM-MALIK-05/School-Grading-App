@@ -33,3 +33,8 @@ __pycache__/
 
 # ---- local logs ----
 *.log
+
+# ---- portable Node.js + npm packages (Postman/Newman runner) ----
+tools/node/
+tools/node-download/
+node_modules/

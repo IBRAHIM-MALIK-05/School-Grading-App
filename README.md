@@ -30,6 +30,10 @@ A school result-management system: **Flutter app → ASP.NET Core Web API (.NET 
 First time only (creates the tables + demo data): Visual Studio → *Package Manager Console* →
 `Update-Database`  (or `dotnet tool restore` then `dotnet ef database update` in `api/SchoolGradingApi`).
 
+## Test the API (Postman / Newman)
+With the API running: double-click `postman/run_tests_local.cmd` → 52 requests, 113 tests,
+HTML report in `postman/reports/`. Or import the two JSON files in `postman/` into the Postman app.
+
 ## Run the app
 ```bash
 cd mobile
@@ -42,3 +46,4 @@ flutter run -d chrome
 - `v1-mock-ui` – full multi-role UI on mock data
 - `v2-local-db` – `school_grading` database in XAMPP + design
 - `v4-local-api` – ASP.NET Core Web API (.NET 10, EF Core code-first, JWT) on XAMPP MySQL
+- `v5-postman-tests` – Postman collection (52 requests, 113 tests) + Newman HTML report
