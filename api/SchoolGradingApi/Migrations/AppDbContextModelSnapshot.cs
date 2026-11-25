@@ -55,6 +55,9 @@ namespace SchoolGradingApi.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
 
+                    b.Property<bool>("isDeleted")
+                        .HasColumnType("tinyint(1)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("LoginId")
@@ -71,7 +74,8 @@ namespace SchoolGradingApi.Migrations
                             LoginId = "admin@school.com",
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$c6gJO2BSfKjGK2cigDfJZOnxFT6ddgxsJnwSCAYt2VHHGDpaTrTk2",
-                            Role = "admin"
+                            Role = "admin",
+                            isDeleted = false
                         },
                         new
                         {
@@ -81,7 +85,8 @@ namespace SchoolGradingApi.Migrations
                             LoginId = "vp@school.com",
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$knbs2jFie66WoIHXYKVkOetGaC0bkXmUDHQmjGEIDfPLqP2D9rREq",
-                            Role = "vp"
+                            Role = "vp",
+                            isDeleted = false
                         },
                         new
                         {
@@ -91,7 +96,8 @@ namespace SchoolGradingApi.Migrations
                             LoginId = "sania@school.com",
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$zUYQ3hSJRte1VA7nbAlzwO0h9woXmWqkT0LuUm2mVhfYVeCCWoWfi",
-                            Role = "teacher"
+                            Role = "teacher",
+                            isDeleted = false
                         },
                         new
                         {
@@ -101,7 +107,8 @@ namespace SchoolGradingApi.Migrations
                             LoginId = "ahsan@school.com",
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$PvGvQ3bx/UDjVC9CcTBFF.POtBi5GnNJ0HOyAt4fhTsvU1IDEzEoa",
-                            Role = "teacher"
+                            Role = "teacher",
+                            isDeleted = false
                         },
                         new
                         {
@@ -111,7 +118,8 @@ namespace SchoolGradingApi.Migrations
                             LoginId = "maryam@school.com",
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$iHSQXgmL3I4mPMVdCiK...me1Q.I8AZCK/4fcH.MwqdJ0hXSqa5CK",
-                            Role = "teacher"
+                            Role = "teacher",
+                            isDeleted = false
                         },
                         new
                         {
@@ -121,7 +129,8 @@ namespace SchoolGradingApi.Migrations
                             LoginId = "usman@school.com",
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$kl2OEPRuYn2EsnpUzv8bbeuzGlNUJyCiLAf6l49ujBC6ygeilXizW",
-                            Role = "teacher"
+                            Role = "teacher",
+                            isDeleted = false
                         });
                 });
 
@@ -605,6 +614,9 @@ namespace SchoolGradingApi.Migrations
                         .HasMaxLength(5)
                         .HasColumnType("varchar(5)");
 
+                    b.Property<bool>("isDeleted")
+                        .HasColumnType("tinyint(1)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClassTeacherId")
@@ -621,34 +633,39 @@ namespace SchoolGradingApi.Migrations
                             Id = 1,
                             ClassTeacherId = 4,
                             GradeName = "Class 8",
-                            Section = "A"
+                            Section = "A",
+                            isDeleted = false
                         },
                         new
                         {
                             Id = 2,
                             ClassTeacherId = 3,
                             GradeName = "Class 8",
-                            Section = "B"
+                            Section = "B",
+                            isDeleted = false
                         },
                         new
                         {
                             Id = 3,
                             ClassTeacherId = 5,
                             GradeName = "Class 9",
-                            Section = "A"
+                            Section = "A",
+                            isDeleted = false
                         },
                         new
                         {
                             Id = 4,
                             ClassTeacherId = 6,
                             GradeName = "Class 9",
-                            Section = "B"
+                            Section = "B",
+                            isDeleted = false
                         },
                         new
                         {
                             Id = 5,
                             GradeName = "Class 9",
-                            Section = "C"
+                            Section = "C",
+                            isDeleted = false
                         });
                 });
 

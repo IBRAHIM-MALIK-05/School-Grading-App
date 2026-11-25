@@ -26,6 +26,7 @@ A school result-management system: **Flutter app → ASP.NET Core Web API (.NET 
 | Create / edit accounts (Subject → Class duties), reset passwords | ✓ | | | |
 | Create / edit classes (name, Class Teacher, subjects + teachers) | ✓ | | | |
 | Add / rename subjects, delete unused subjects | ✓ | | | |
+| Delete teachers / classes (soft delete: hidden, kept in MySQL) | ✓ | | | |
 | Add / delete students (no editing – delete and add again) | ✓ | ✓ | ✗ 403 | |
 | Enter marks, Save Progress, Review & Submit | | (own subjects) | ✓ | |
 | Class tracker + result-card readiness | ✓ (view) | ✓ | | ✓ (view) |
@@ -37,12 +38,27 @@ Login*; the Admin taps **Login as Admin**. The API refuses an account on the wro
 so nobody gets in through the wrong door. The **Admin Panel** has three tabs – Users, Classes,
 Subjects – each with a search bar, and every form uses search-as-you-type pickers.
 
+**Soft delete / hard delete** (same names as the Assignment 2 Web API: `isDeleted`,
+`SoftDeleteById`, `HardDeleteById`). The Admin's **Delete** button on a teacher or class only
+sets `isDeleted = 1`: the row stays in MySQL, but EF Core's query filter hides it everywhere
+(lists, pickers, login, old tokens get 401). A teacher who still leads a class or teaches
+subjects must hand them over first (409); the Admin cannot delete their own account (400).
+The backend maintainer has extra Admin-only endpoints in **Swagger only** – the app never calls them:
+
+| Endpoint (`users` or `classes`) | What it does |
+|---|---|
+| `DELETE /api/users/SoftDeleteById?id=` | soft delete (used by the app) |
+| `GET /api/users/GetDeleted` | list the soft-deleted rows |
+| `PUT /api/users/RestoreById?id=` | undo a soft delete |
+| `DELETE /api/users/HardDeleteById?id=` | remove the row for ever – refused (409) while marks or other rows still point to it |
+
 Deleting a student removes them and all their marks from every subject of the class; the
 subject teachers then see *"… was removed by the Class Teacher of …"* on their marks screen.
 A sample printed result card is in `docs/samples/result_card_sample.pdf`
 (made by `flutter test test/report_card_pdf_test.dart`); screenshots of these features are
 `docs/screenshots/m7b_*.png` (`tools/screenshots/capture_m7b_features.py`); the login and
-Admin Panel screens are `m7c_*.png` (`tools/screenshots/capture_m7c_admin.py`).
+Admin Panel screens are `m7c_*.png` (`tools/screenshots/capture_m7c_admin.py`); soft / hard
+delete is `m7d_*.png` (`tools/screenshots/capture_m7d_delete.py`).
 
 ## Run the API (local)
 1. Start **Apache + MySQL** in the XAMPP Control Panel (database `school_grading`).
@@ -80,7 +96,7 @@ First time only (creates the tables + demo data): Visual Studio → *Package Man
 ## Test the API (Postman / Newman)
 - Local: with the API running, double-click `postman/run_tests_local.cmd`.
 - Azure: double-click `postman/run_tests_azure.cmd` (wakes the server up first).
-- Both run 101 requests / 212 tests and write an HTML report to `postman/reports/`
+- Both run 148 requests / 285 tests and write an HTML report to `postman/reports/`
   (login tokens are removed from the report by `postman/redact_tokens.js`).
   Or import the JSON files in `postman/` into the Postman app and pick the *Local* or *Azure* environment.
 - Afterwards, reset the cloud data: `python tools/azure/import_to_azure.py --reset`.

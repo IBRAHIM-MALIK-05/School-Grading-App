@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using SchoolGradingApi.database;
@@ -30,7 +31,10 @@ builder.Services.AddSwaggerGen(options =>
 // MySQL (XAMPP locally, Azure later) - only the connection string changes
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySQL(builder.Configuration.GetConnectionString("DefaultConnection")!)
-           .AddInterceptors(new MariaDbFix()));   // XAMPP MariaDB fix, see database/MariaDbFix.cs
+           .AddInterceptors(new MariaDbFix())     // XAMPP MariaDB fix, see database/MariaDbFix.cs
+           // Soft delete: hiding a deleted class also hides its students / subjects when they are
+           // loaded through the class. That is exactly what we want, so EF's warning about it is off.
+           .ConfigureWarnings(w => w.Ignore(CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning)));
 
 // JWT login: every request must carry a token signed with our secret key
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

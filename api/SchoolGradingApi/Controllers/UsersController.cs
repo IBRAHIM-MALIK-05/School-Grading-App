@@ -102,5 +102,118 @@ namespace SchoolGradingApi.Controllers
 
             return Ok(MakeUserDto(user));
         }
+
+        // ================= Soft delete / hard delete (names from Assignment 2) =================
+
+        // 24) DELETE /api/users/SoftDeleteById?id=7  -> Admin "deletes" a Teacher or Principal/VP.
+        //     Soft delete: isDeleted = true, the row stays in MySQL. The user disappears from every
+        //     list and picker, cannot log in, and their old token stops working (401).
+        [HttpDelete("SoftDeleteById")]
+        public IActionResult SoftDeleteById(int id)
+        {
+            var me = GetCurrentUser();
+            if (me == null) return NotLoggedIn();
+            if (me.MustChangePassword) return MustChangePasswordFirst();
+            if (me.Role != "admin") return Error(403, "Only the Admin can delete accounts.");
+            if (id == me.Id) return Error(400, "You cannot delete your own account.");
+
+            var userRecord = _db.Users.Where(x => x.Id == id).FirstOrDefault();
+            if (userRecord == null) return Error(404, "User not found.");
+            if (userRecord.Role == "admin") return Error(400, "The Admin account cannot be deleted.");
+
+            // A teacher who still has work cannot just disappear: hand it over first
+            var ledClass = _db.Classes.FirstOrDefault(c => c.ClassTeacherId == id);
+            if (ledClass != null)
+                return Error(409, userRecord.FullName + " is the Class Teacher of " + DtoMapper.ClassName(ledClass) +
+                                  ". Pick another Class Teacher for it first (Classes tab).");
+            var subjects = _db.TeachingAssignments
+                .Include(a => a.Subject).Include(a => a.SchoolClass)   // only classes that are not deleted
+                .Where(a => a.TeacherId == id)
+                .ToList();
+            if (subjects.Count > 0)
+                return Error(409, userRecord.FullName + " still teaches " + subjects.Count + " subject(s), e.g. " +
+                                  subjects[0].Subject!.Name + " in " + DtoMapper.ClassName(subjects[0].SchoolClass!) +
+                                  ". Give them to other teachers first (Classes tab).");
+
+            userRecord.isDeleted = true;
+            _db.Users.Update(userRecord);
+            _db.SaveChanges();
+            return Ok(new { message = userRecord.FullName + " was deleted." });
+        }
+
+        // 25) GET /api/users/GetDeleted  -> backend maintainer (Swagger): every soft-deleted account
+        [HttpGet("GetDeleted")]
+        public IActionResult GetDeleted()
+        {
+            var me = GetCurrentUser();
+            if (me == null) return NotLoggedIn();
+            if (me.MustChangePassword) return MustChangePasswordFirst();
+            if (me.Role != "admin") return Error(403, "Only the Admin can see deleted accounts.");
+
+            var users = _db.Users.IgnoreQueryFilters()      // include the deleted rows
+                .Where(x => x.isDeleted)
+                .OrderBy(x => x.Id)
+                .ToList()
+                .Select(u => DtoMapper.ToUserDto(u, null))
+                .ToList();
+            return Ok(users);
+        }
+
+        // 26) PUT /api/users/RestoreById?id=7  -> backend maintainer (Swagger): undo a soft delete
+        [HttpPut("RestoreById")]
+        public IActionResult RestoreById(int id)
+        {
+            var me = GetCurrentUser();
+            if (me == null) return NotLoggedIn();
+            if (me.MustChangePassword) return MustChangePasswordFirst();
+            if (me.Role != "admin") return Error(403, "Only the Admin can restore accounts.");
+
+            var userRecord = _db.Users.IgnoreQueryFilters().Where(x => x.Id == id).FirstOrDefault();
+            if (userRecord == null) return Error(404, "User not found.");
+            if (!userRecord.isDeleted) return Error(400, userRecord.FullName + " is not deleted.");
+
+            userRecord.isDeleted = false;
+            _db.Users.Update(userRecord);
+            _db.SaveChanges();
+            return Ok(new { message = userRecord.FullName + " was restored and can log in again." });
+        }
+
+        // 27) DELETE /api/users/HardDeleteById?id=7  -> backend maintainer ONLY (Swagger, not in the app):
+        //     removes the row from MySQL for ever. Refused (409) while marks or other rows still
+        //     point to this user, so results and history are never lost.
+        [HttpDelete("HardDeleteById")]
+        public IActionResult HardDeleteById(int id)
+        {
+            var me = GetCurrentUser();
+            if (me == null) return NotLoggedIn();
+            if (me.MustChangePassword) return MustChangePasswordFirst();
+            if (me.Role != "admin") return Error(403, "Only the Admin can permanently delete accounts.");
+            if (id == me.Id) return Error(400, "You cannot delete your own account.");
+
+            var userRecord = _db.Users.IgnoreQueryFilters().Where(x => x.Id == id).FirstOrDefault();
+            if (userRecord == null) return Error(404, "User not found.");
+            if (userRecord.Role == "admin") return Error(400, "The Admin account cannot be deleted.");
+
+            // Foreign keys that point to this user (also in deleted classes)
+            int subjects = _db.TeachingAssignments.Count(a => a.TeacherId == id);
+            int marks = _db.Marks.Count(m => m.EnteredById == id);
+            int removals = _db.StudentRemovals.Count(r => r.RemovedById == id);
+            if (subjects + marks + removals > 0)
+                return Error(409, userRecord.FullName + " cannot be deleted permanently: still linked to " +
+                                  subjects + " subject(s) in classes, " + marks + " mark(s) and " +
+                                  removals + " student-removal notice(s). Keep the account soft-deleted instead.");
+
+            // A Class Teacher link is cleared by MySQL itself (classes.ClassTeacherId ON DELETE SET NULL)
+            _db.Users.Remove(userRecord);
+            try
+            {
+                _db.SaveChanges();
+            }
+            catch (DbUpdateException)
+            {
+                return Error(409, userRecord.FullName + " is still used by other rows, so it cannot be deleted permanently.");
+            }
+            return Ok(new { message = userRecord.FullName + " was permanently deleted." });
+        }
     }
 }

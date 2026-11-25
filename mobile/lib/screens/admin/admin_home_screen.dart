@@ -60,6 +60,9 @@ class _UsersTabState extends State<UsersTab> with AutomaticKeepAliveClientMixin 
   String _query = '';
   String _roleFilter = 'all'; // all / teacher / vp
 
+  // Small icon buttons, so Edit + Reset + Delete leave room for the login ID on a phone
+  static const _tight = VisualDensity(horizontal: -4, vertical: -2);
+
   @override
   bool get wantKeepAlive => true; // keep the search when switching tabs
 
@@ -95,6 +98,29 @@ class _UsersTabState extends State<UsersTab> with AutomaticKeepAliveClientMixin 
       final credentials = await dataService.resetPassword(user.id);
       if (!mounted) return;
       await showCredentialsDialog(context, credentials, isReset: true);
+      _reload();
+    } catch (e) {
+      if (mounted) showMessage(context, errorText(e), isError: true);
+    }
+  }
+
+  // Soft delete: the account is hidden and cannot log in, but stays in the database.
+  Future<void> _delete(AppUser user) async {
+    final ok = await confirmDialog(
+      context,
+      title: 'Delete ${user.fullName}?',
+      message: '${user.fullName} (${user.loginId}) will be removed from the app and can no '
+          'longer log in. Marks they entered are kept.\n\n'
+          'A teacher who still leads a class or teaches subjects must hand them over first.',
+      confirmText: 'Delete',
+      isDanger: true,
+    );
+    if (!ok || !mounted) return;
+
+    try {
+      final message = await dataService.softDeleteUser(user.id);
+      if (!mounted) return;
+      showMessage(context, message);
       _reload();
     } catch (e) {
       if (mounted) showMessage(context, errorText(e), isError: true);
@@ -202,7 +228,8 @@ class _UsersTabState extends State<UsersTab> with AutomaticKeepAliveClientMixin 
           children: [
             Text(user.loginId),
             Text(user.isClassTeacher
-                ? 'Class Teacher • ${user.classTeacherOfClassName}'
+                // non-breaking spaces keep "Class 8 - B" together on one line
+                ? 'Class Teacher • ${user.classTeacherOfClassName?.replaceAll(' ', ' ')}'
                 : user.roleLabel),
             if (user.mustChangePassword)
               const Text('Must change password',
@@ -216,14 +243,25 @@ class _UsersTabState extends State<UsersTab> with AutomaticKeepAliveClientMixin 
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
+                    visualDensity: _tight,
+                    padding: const EdgeInsets.all(4),
                     icon: const Icon(Icons.edit_outlined),
                     tooltip: 'Edit ${user.fullName}',
                     onPressed: () => _openForm(existing: user),
                   ),
                   IconButton(
+                    visualDensity: _tight,
+                    padding: const EdgeInsets.all(4),
                     icon: const Icon(Icons.lock_reset),
                     tooltip: 'Reset password',
                     onPressed: () => _resetPassword(user),
+                  ),
+                  IconButton(
+                    visualDensity: _tight,
+                    padding: const EdgeInsets.all(4),
+                    icon: const Icon(Icons.delete_outline, color: AppColors.danger),
+                    tooltip: 'Delete ${user.fullName}',
+                    onPressed: () => _delete(user),
                   ),
                 ],
               ),

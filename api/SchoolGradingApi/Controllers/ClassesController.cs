@@ -364,6 +364,114 @@ namespace SchoolGradingApi.Controllers
             return null;
         }
 
+        // ================= Soft delete / hard delete (names from Assignment 2) =================
+
+        // 28) DELETE /api/classes/SoftDeleteById?id=6  -> Admin "deletes" a class.
+        //     Soft delete: isDeleted = true. Its students, subjects and marks stay in MySQL,
+        //     but the class disappears from every list, tracker and teacher's subject list.
+        [HttpDelete("SoftDeleteById")]
+        public IActionResult SoftDeleteById(int id)
+        {
+            var me = GetCurrentUser();
+            if (me == null) return NotLoggedIn();
+            if (me.MustChangePassword) return MustChangePasswordFirst();
+            if (me.Role != "admin") return Error(403, "Only the Admin can delete classes.");
+
+            var classRecord = _db.Classes.Where(x => x.Id == id).FirstOrDefault();
+            if (classRecord == null) return Error(404, "Class not found.");
+
+            classRecord.isDeleted = true;
+            classRecord.ClassTeacherId = null;   // its Class Teacher is free to lead another class
+            _db.Classes.Update(classRecord);
+            _db.SaveChanges();
+            return Ok(new { message = DtoMapper.ClassName(classRecord) +
+                                      " was deleted. Its students and marks are kept in the database." });
+        }
+
+        // 29) GET /api/classes/GetDeleted  -> backend maintainer (Swagger): every soft-deleted class
+        [HttpGet("GetDeleted")]
+        public IActionResult GetDeleted()
+        {
+            var me = GetCurrentUser();
+            if (me == null) return NotLoggedIn();
+            if (me.MustChangePassword) return MustChangePasswordFirst();
+            if (me.Role != "admin") return Error(403, "Only the Admin can see deleted classes.");
+
+            var classes = ClassesWithDetails().IgnoreQueryFilters()   // include the deleted rows
+                .Where(x => x.isDeleted)
+                .OrderBy(x => x.Id)
+                .ToList()
+                .Select(c => DtoMapper.ToSchoolClassDto(c))
+                .ToList();
+            return Ok(classes);
+        }
+
+        // 30) PUT /api/classes/RestoreById?id=6  -> backend maintainer (Swagger): undo a soft delete
+        [HttpPut("RestoreById")]
+        public IActionResult RestoreById(int id)
+        {
+            var me = GetCurrentUser();
+            if (me == null) return NotLoggedIn();
+            if (me.MustChangePassword) return MustChangePasswordFirst();
+            if (me.Role != "admin") return Error(403, "Only the Admin can restore classes.");
+
+            var classRecord = _db.Classes.IgnoreQueryFilters().Where(x => x.Id == id).FirstOrDefault();
+            if (classRecord == null) return Error(404, "Class not found.");
+            if (!classRecord.isDeleted) return Error(400, DtoMapper.ClassName(classRecord) + " is not deleted.");
+
+            // Its subject teachers must still be active accounts
+            var teacherIds = _db.TeachingAssignments.Where(a => a.ClassId == id).Select(a => a.TeacherId).Distinct().ToList();
+            var deletedTeachers = _db.Users.IgnoreQueryFilters()
+                .Where(u => teacherIds.Contains(u.Id) && u.isDeleted)
+                .Select(u => u.FullName)
+                .ToList();
+            if (deletedTeachers.Count > 0)
+                return Error(409, "Restore " + string.Join(", ", deletedTeachers) + " first: they still teach subjects in " +
+                                  DtoMapper.ClassName(classRecord) + ".");
+
+            classRecord.isDeleted = false;
+            _db.Classes.Update(classRecord);
+            _db.SaveChanges();
+            return Ok(new { message = DtoMapper.ClassName(classRecord) +
+                                      " was restored. Pick its Class Teacher again in the Admin Panel." });
+        }
+
+        // 31) DELETE /api/classes/HardDeleteById?id=6  -> backend maintainer ONLY (Swagger, not in the app):
+        //     removes the class for ever, together with its students, subjects and removal notices.
+        //     Refused (409) if any student of the class has marks, so results are never lost.
+        [HttpDelete("HardDeleteById")]
+        public IActionResult HardDeleteById(int id)
+        {
+            var me = GetCurrentUser();
+            if (me == null) return NotLoggedIn();
+            if (me.MustChangePassword) return MustChangePasswordFirst();
+            if (me.Role != "admin") return Error(403, "Only the Admin can permanently delete classes.");
+
+            var classRecord = _db.Classes.IgnoreQueryFilters().Where(x => x.Id == id).FirstOrDefault();
+            if (classRecord == null) return Error(404, "Class not found.");
+
+            int marks = _db.Marks.Count(m => m.Student!.ClassId == id);
+            if (marks > 0)
+                return Error(409, DtoMapper.ClassName(classRecord) + " has " + marks + " mark(s). Deleting it permanently " +
+                                  "would lose results - keep it soft-deleted instead.");
+
+            // No marks: remove the rows that point to the class first (foreign keys), then the class.
+            // One SaveChanges = one transaction: all or nothing.
+            _db.StudentRemovals.RemoveRange(_db.StudentRemovals.Where(r => r.ClassId == id));
+            _db.TeachingAssignments.RemoveRange(_db.TeachingAssignments.Where(a => a.ClassId == id));
+            _db.Students.RemoveRange(_db.Students.Where(s => s.ClassId == id));
+            _db.Classes.Remove(classRecord);
+            try
+            {
+                _db.SaveChanges();
+            }
+            catch (DbUpdateException)
+            {
+                return Error(409, DtoMapper.ClassName(classRecord) + " is still used by other rows, so it cannot be deleted permanently.");
+            }
+            return Ok(new { message = DtoMapper.ClassName(classRecord) + " was permanently deleted." });
+        }
+
         // Class name + section: required, not too long, and not used by ANOTHER class
         private IActionResult? CheckClassName(string gradeName, string section, int? thisClassId)
         {
@@ -373,7 +481,13 @@ namespace SchoolGradingApi.Controllers
                 return Error(400, "Class name can be at most " + CreateClassDto.MaxGradeNameLength + " characters.");
             if (section.Length > CreateClassDto.MaxSectionLength)
                 return Error(400, "Section can be at most " + CreateClassDto.MaxSectionLength + " characters.");
-            if (_db.Classes.Any(c => c.GradeName == gradeName && c.Section == section && c.Id != thisClassId))
+            // IgnoreQueryFilters: a soft-deleted class still owns its name (UNIQUE in MySQL)
+            var sameName = _db.Classes.IgnoreQueryFilters()
+                .FirstOrDefault(c => c.GradeName == gradeName && c.Section == section && c.Id != thisClassId);
+            if (sameName != null && sameName.isDeleted)
+                return Error(409, gradeName + " - " + section + " was deleted earlier and is still kept in the database. " +
+                                  "Ask the backend maintainer to restore it or delete it permanently.");
+            if (sameName != null)
                 return Error(409, gradeName + " - " + section + " already exists.");
             return null;
         }

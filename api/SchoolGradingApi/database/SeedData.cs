@@ -16,17 +16,17 @@ namespace SchoolGradingApi.database
             // ---------------- users ----------------
             // PasswordHash = BCrypt hash of "123" (each one has its own random salt)
             modelBuilder.Entity<AppUser>().HasData(
-                new AppUser { Id = 1, FullName = "School Admin", LoginId = "admin@school.com", Role = "admin", CreatedAt = Created,
+                new AppUser { Id = 1, FullName = "School Admin", LoginId = "admin@school.com", Role = "admin", CreatedAt = Created, isDeleted = false,
                     PasswordHash = "$2a$11$c6gJO2BSfKjGK2cigDfJZOnxFT6ddgxsJnwSCAYt2VHHGDpaTrTk2" },
-                new AppUser { Id = 2, FullName = "VP Sarah", LoginId = "vp@school.com", Role = "vp", CreatedAt = Created,
+                new AppUser { Id = 2, FullName = "VP Sarah", LoginId = "vp@school.com", Role = "vp", CreatedAt = Created, isDeleted = false,
                     PasswordHash = "$2a$11$knbs2jFie66WoIHXYKVkOetGaC0bkXmUDHQmjGEIDfPLqP2D9rREq" },
-                new AppUser { Id = 3, FullName = "Teacher Sania", LoginId = "sania@school.com", Role = "teacher", CreatedAt = Created,
+                new AppUser { Id = 3, FullName = "Teacher Sania", LoginId = "sania@school.com", Role = "teacher", CreatedAt = Created, isDeleted = false,
                     PasswordHash = "$2a$11$zUYQ3hSJRte1VA7nbAlzwO0h9woXmWqkT0LuUm2mVhfYVeCCWoWfi" },
-                new AppUser { Id = 4, FullName = "Teacher Ahsan", LoginId = "ahsan@school.com", Role = "teacher", CreatedAt = Created,
+                new AppUser { Id = 4, FullName = "Teacher Ahsan", LoginId = "ahsan@school.com", Role = "teacher", CreatedAt = Created, isDeleted = false,
                     PasswordHash = "$2a$11$PvGvQ3bx/UDjVC9CcTBFF.POtBi5GnNJ0HOyAt4fhTsvU1IDEzEoa" },
-                new AppUser { Id = 5, FullName = "Teacher Maryam", LoginId = "maryam@school.com", Role = "teacher", CreatedAt = Created,
+                new AppUser { Id = 5, FullName = "Teacher Maryam", LoginId = "maryam@school.com", Role = "teacher", CreatedAt = Created, isDeleted = false,
                     PasswordHash = "$2a$11$iHSQXgmL3I4mPMVdCiK...me1Q.I8AZCK/4fcH.MwqdJ0hXSqa5CK" },
-                new AppUser { Id = 6, FullName = "Teacher Usman", LoginId = "usman@school.com", Role = "teacher", CreatedAt = Created,
+                new AppUser { Id = 6, FullName = "Teacher Usman", LoginId = "usman@school.com", Role = "teacher", CreatedAt = Created, isDeleted = false,
                     PasswordHash = "$2a$11$kl2OEPRuYn2EsnpUzv8bbeuzGlNUJyCiLAf6l49ujBC6ygeilXizW" }
             );
 
@@ -41,11 +41,11 @@ namespace SchoolGradingApi.database
 
             // ---------------- classes (class teacher in brackets) ----------------
             modelBuilder.Entity<SchoolClass>().HasData(
-                new SchoolClass { Id = 1, GradeName = "Class 8", Section = "A", ClassTeacherId = 4 },   // Ahsan
-                new SchoolClass { Id = 2, GradeName = "Class 8", Section = "B", ClassTeacherId = 3 },   // Sania
-                new SchoolClass { Id = 3, GradeName = "Class 9", Section = "A", ClassTeacherId = 5 },   // Maryam
-                new SchoolClass { Id = 4, GradeName = "Class 9", Section = "B", ClassTeacherId = 6 },   // Usman
-                new SchoolClass { Id = 5, GradeName = "Class 9", Section = "C", ClassTeacherId = null } // none yet
+                new SchoolClass { Id = 1, isDeleted = false, GradeName = "Class 8", Section = "A", ClassTeacherId = 4 },   // Ahsan
+                new SchoolClass { Id = 2, isDeleted = false, GradeName = "Class 8", Section = "B", ClassTeacherId = 3 },   // Sania
+                new SchoolClass { Id = 3, isDeleted = false, GradeName = "Class 9", Section = "A", ClassTeacherId = 5 },   // Maryam
+                new SchoolClass { Id = 4, isDeleted = false, GradeName = "Class 9", Section = "B", ClassTeacherId = 6 },   // Usman
+                new SchoolClass { Id = 5, isDeleted = false, GradeName = "Class 9", Section = "C", ClassTeacherId = null } // none yet
             );
 
             // ---------------- students: 5 per class ----------------

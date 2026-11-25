@@ -2,14 +2,14 @@
 
 | File | What it is |
 |---|---|
-| `SchoolGrading.postman_collection.json` | 101 requests in 9 folders, each with test scripts (212 checks in total) |
+| `SchoolGrading.postman_collection.json` | 148 requests in 10 folders, each with test scripts (285 checks in total) |
 | `SchoolGrading_Local.postman_environment.json` | `baseUrl = http://localhost:5080/api` |
 | `SchoolGrading_Azure.postman_environment.json` | `baseUrl = https://school-grading-api-bcgi.azurewebsites.net/api` (live cloud API) |
 | `run_tests_local.cmd` | Runs the whole collection with **Newman** against the local API and writes the HTML report |
 | `run_tests_azure.cmd` | The same against **Azure** (wakes up the free F1 server first) |
 | `reports/local_test_report.html` | Latest HTML report (open in a browser) |
 | `reports/local_cli_output.txt` | The same run as plain text |
-| `reports/azure_test_report.html`, `reports/azure_cli_output.txt` | Latest run against Azure (101 requests, 212 tests, 0 failures) |
+| `reports/azure_test_report.html`, `reports/azure_cli_output.txt` | Latest run against Azure (148 requests, 285 tests, 0 failures) |
 
 ## Run in the Postman app
 1. Postman → **Import** → select both JSON files.
@@ -61,11 +61,23 @@ Node.js in `tools/node` and Newman in `tools/postman-runner` – nothing is inst
    max marks 0 (400); rename + new max marks (200); rename to an existing subject (409); max
    below a mark already given (409); not found (404); teacher (403); delete a subject that is
    taught in classes (409); delete the unused new subject (200); back to 5 subjects.
+10. **Admin – soft & hard delete** (names from the Assignment 2 Web API):
+   *Teacher:* a new teacher is soft-deleted (`DELETE /users/SoftDeleteById?id=`, 200) and then
+   disappears from `GET /users`, cannot log in (401) and its old token stops working (401);
+   a teacher (403), the Admin's own account (400), a teacher who still leads a class (409) and an
+   unknown id (404) are refused. `GET /users/GetDeleted` still finds the row, `PUT
+   /users/RestoreById?id=` brings it back (login works again; restoring twice = 400).
+   `DELETE /users/HardDeleteById?id=` is refused for a teacher with marks (409), the own account
+   (400) and a teacher (403); the soft-deleted teacher is then removed for ever (200, then 404).
+   *Class:* a new class with a subject and a student is soft-deleted: it leaves the overview and
+   Sania's subject list, its tracker and result cards give 404, and its name cannot be reused
+   (409). `GetDeleted` / `RestoreById` work like for users. `HardDeleteById` refuses 8-B (it has
+   marks, 409) and removes the new class with its student and subject (200, then 404).
 
 The collection cleans up after itself (deletes the student it adds, unpublishes 9-A),
 so it can be run again and again. Each run adds one new teacher account (`ali@school.com`,
 `ali2@school.com`, …) and one new class (`Class 11 - T<random>` after its rename); the subject it
-adds is deleted again.
+adds is deleted again. Folder 10's teacher and class are hard-deleted at the end.
 
 
 ## Against Azure

@@ -35,6 +35,7 @@ default. MySQL column names are case-insensitive.
 | `Role` | varchar(20) | `admin`, `teacher` or `vp` |
 | `MustChangePassword` | tinyint(1) | 1 = temporary password, must change at next login |
 | `CreatedAt` | datetime(6) | when the account was created |
+| `isDeleted` | tinyint(1) | **soft delete**: 1 = deleted by the Admin (hidden, cannot log in), row kept |
 
 ### 2. `subjects`
 | Column | Type | Rules |
@@ -51,6 +52,7 @@ default. MySQL column names are case-insensitive.
 | `Section` | varchar(5) | e.g. `B` |
 | `ClassTeacherId` | int | **FK → users.Id**, optional, **UNIQUE** (a teacher leads at most one class), `ON DELETE SET NULL` |
 | `ResultsPublishedAt` | datetime(6) | NULL = not published. Not NULL = published → marks & students **locked** |
+| `isDeleted` | tinyint(1) | **soft delete**: 1 = deleted by the Admin (hidden), students + marks kept |
 | | | **UNIQUE (`GradeName`, `Section`)** – no duplicate "Class 8 - B" |
 
 ### 4. `students`
@@ -146,6 +148,7 @@ Business rules (marks between 0 and max, "cannot edit a published class",
 | `02_initial_create_generated_by_ef.sql` | The SQL that EF Core generated from the C# entities (what Update-Database ran) – for reading only |
 | `03_school_grading_export_for_azure.sql` | phpMyAdmin export used to migrate to Azure (Milestone 3); `student_removals` was added to it later so XAMPP and Azure stay identical |
 | `04_add_student_removals_generated_by_ef.sql` | SQL of the 2nd migration `AddStudentRemovals` (one new table, see below) – for reading only |
+| `05_add_soft_delete_generated_by_ef.sql` | SQL of the 3rd migration `AddSoftDelete` (`isDeleted` on `users` + `classes`) – for reading only |
 
 ## Later change: `student_removals` (migration `AddStudentRemovals`)
 When a Class Teacher (or the Admin) deletes a student, the student row and ALL their marks are
@@ -166,6 +169,22 @@ instead of wondering why the name vanished.
 
 Applied locally with `dotnet ef database update`; on Azure the same table is created by
 `tools/azure/import_to_azure.py --reset` (it imports `03_…_export_for_azure.sql`).
+
+## Later change: soft delete (migration `AddSoftDelete`)
+Same idea and names as the Assignment 2 Web API (`public bool isDeleted { get; set; }`).
+`users` and `classes` got one column `isDeleted tinyint(1) NOT NULL DEFAULT 0`; every demo row
+starts at 0. When the Admin deletes a teacher or class in the app, the API only sets it to 1.
+`AppDbContext` adds `HasQueryFilter(e => !e.isDeleted)` for both tables, so EF Core writes
+`WHERE isDeleted = 0` into every query by itself – deleted rows vanish from lists, pickers and
+login without changing any other query. Only the maintainer endpoints (`GetDeleted`,
+`RestoreById`, `HardDeleteById`) and the "is this name / Login ID free?" checks use
+`.IgnoreQueryFilters()` to see them (the UNIQUE indexes still count deleted rows).
+Hard delete (`HardDeleteById`, Swagger only) really removes the row and is refused (409) while
+marks, subjects or removal notices still point to it, so results are never lost.
+
+Applied locally with `dotnet ef database update`; the same columns are in
+`03_…_export_for_azure.sql` (checked: importing it gives exactly the XAMPP columns, indexes,
+foreign keys and rows), so `import_to_azure.py --reset` brings Azure to the same state.
 
 ## How the tables were created (Milestone 4)
 1. `Add-Migration InitialCreate` (CLI: `dotnet ef migrations add InitialCreate`) – EF Core

@@ -29,7 +29,7 @@ namespace SchoolGradingApi.Controllers
                     Id = s.Id,
                     Name = s.Name,
                     MaxMarks = s.MaxMarks,
-                    ClassCount = _db.TeachingAssignments.Count(a => a.SubjectId == s.Id)
+                    ClassCount = _db.Classes.Count(c => c.Assignments.Any(a => a.SubjectId == s.Id))   // deleted classes not counted
                 })
                 .ToList();
             return Ok(subjects);
@@ -94,10 +94,13 @@ namespace SchoolGradingApi.Controllers
             var subject = _db.Subjects.FirstOrDefault(s => s.Id == id);
             if (subject == null) return Error(404, "Subject not found.");
 
-            int classCount = _db.TeachingAssignments.Count(a => a.SubjectId == id);
+            int classCount = _db.Classes.Count(c => c.Assignments.Any(a => a.SubjectId == id));
             if (classCount > 0)
                 return Error(409, subject.Name + " is taught in " + classCount + " class(es). " +
                                   "Remove it from those classes first.");
+            if (_db.TeachingAssignments.Any(a => a.SubjectId == id))
+                return Error(409, subject.Name + " is still used by a deleted class (kept so it can be restored), " +
+                                  "so it cannot be deleted.");
             if (_db.Marks.Any(m => m.SubjectId == id))
                 return Error(409, subject.Name + " already has marks, so it cannot be deleted.");
 

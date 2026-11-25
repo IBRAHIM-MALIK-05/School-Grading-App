@@ -39,6 +39,10 @@ abstract class DataService {
   Future<SubjectInfo> createSubject(String name, int maxMarks); // POST /api/subjects (Admin)
   Future<SubjectInfo> updateSubject(int subjectId, String name, int maxMarks); // PUT /api/subjects/{id} (Admin)
   Future<String> deleteSubject(int subjectId); // DELETE /api/subjects/{id} (Admin)
+  // Soft delete only (isDeleted = true): the row stays in MySQL. Hard delete is a
+  // backend-maintainer endpoint in Swagger and is deliberately NOT part of the app.
+  Future<String> softDeleteUser(int userId); // DELETE /api/users/SoftDeleteById?id= (Admin)
+  Future<String> softDeleteClass(int classId); // DELETE /api/classes/SoftDeleteById?id= (Admin)
   Future<SchoolClass> createClass(String gradeName, String section,
       ClassTeachersRequest teachers); // POST /api/classes (Admin)
   Future<SchoolClass> updateClassTeachers(

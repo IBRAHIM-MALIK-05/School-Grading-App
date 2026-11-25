@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SchoolGradingApi.database;
 using SchoolGradingApi.Dtos;
 using SchoolGradingApi.entities;
@@ -117,7 +118,8 @@ namespace SchoolGradingApi.Controllers
             // One transaction: if giving the class / subjects fails, the new user is rolled back too
             // (no half-created account without its duties).
             using var transaction = _db.Database.BeginTransaction();
-            var existingLoginIds = _db.Users.Select(u => u.LoginId).ToList();
+            // IgnoreQueryFilters: soft-deleted users still own their Login ID (UNIQUE in MySQL)
+            var existingLoginIds = _db.Users.IgnoreQueryFilters().Select(u => u.LoginId).ToList();
             var temporaryPassword = PasswordHelper.GenerateTemporaryPassword();
 
             var user = new AppUser

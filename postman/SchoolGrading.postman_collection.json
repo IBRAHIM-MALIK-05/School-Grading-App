@@ -5049,6 +5049,2113 @@
           }
         }
       ]
+    },
+    {
+      "name": "10. Admin - soft & hard delete",
+      "description": "Soft delete (isDeleted = 1, used by the app) and hard delete (backend maintainer only, Swagger) for Teachers and Classes, plus GetDeleted / RestoreById. Names follow the Assignment 2 Web API (SoftDeleteById, HardDeleteById, isDeleted).",
+      "item": [
+        {
+          "name": "Register - a Teacher to delete (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201 Created\", () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set(\"delLoginId\", json.loginId);",
+                  "pm.collectionVariables.set(\"delTempPassword\", json.temporaryPassword);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "A fresh teacher with no class and no subjects, so it can be deleted.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Temp Teacher\",\n  \"role\": \"teacher\",\n  \"contactEmail\": \"temp.teacher@gmail.com\",\n  \"classTeacherOfClassId\": null,\n  \"assignmentIds\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login - the Teacher to delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set(\"delToken\", json.token);",
+                  "pm.collectionVariables.set(\"delUserId\", json.user.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"loginId\": \"{{delLoginId}}\",\n  \"password\": \"{{delTempPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "SoftDeleteById user - by a Teacher (not allowed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/SoftDeleteById?id={{delUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "SoftDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delUserId}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "SoftDeleteById user - own Admin account (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Message mentions \\\"your own account\\\"\", () => pm.expect(pm.response.json().message).to.include(\"your own account\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/SoftDeleteById?id=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "SoftDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "SoftDeleteById user - Teacher who still has a class + subjects (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Message mentions \\\"Class Teacher of Class 8 - B\\\"\", () => pm.expect(pm.response.json().message).to.include(\"Class Teacher of Class 8 - B\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/SoftDeleteById?id=3",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "SoftDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "3"
+                }
+              ]
+            },
+            "description": "Sania leads 8-B and teaches 10 subjects: hand them over first."
+          }
+        },
+        {
+          "name": "SoftDeleteById user - not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/SoftDeleteById?id=99999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "SoftDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "99999"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "SoftDeleteById user - Admin deletes the Teacher (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Message mentions \\\"was deleted\\\"\", () => pm.expect(pm.response.json().message).to.include(\"was deleted\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/SoftDeleteById?id={{delUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "SoftDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delUserId}}"
+                }
+              ]
+            },
+            "description": "Soft delete: users.isDeleted = 1, the row stays in MySQL."
+          }
+        },
+        {
+          "name": "Users - list no longer shows the deleted Teacher",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const id = Number(pm.collectionVariables.get(\"delUserId\"));",
+                  "pm.test(\"Deleted Teacher is hidden\", () => pm.expect(pm.response.json().map(u => u.id)).to.not.include(id));",
+                  "pm.test(\"Sania is still listed\", () => pm.expect(pm.response.json().map(u => u.id)).to.include(3));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Login - deleted Teacher cannot log in (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401 Unauthorized\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"No token is given\", () => pm.expect(pm.response.json()).to.not.have.property(\"token\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"loginId\": \"{{delLoginId}}\",\n  \"password\": \"{{delTempPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Old token of the deleted Teacher stops working (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401 Unauthorized\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{delToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assignments/mine",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assignments",
+                "mine"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "SoftDeleteById user - already deleted (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/SoftDeleteById?id={{delUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "SoftDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delUserId}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GetDeleted users - Admin sees the deleted Teacher",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const u = pm.response.json().find(x => x.id === Number(pm.collectionVariables.get(\"delUserId\")));",
+                  "pm.test(\"Still stored in the database\", () => { pm.expect(u).to.not.be.undefined; pm.expect(u.loginId).to.eql(pm.collectionVariables.get(\"delLoginId\")); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/GetDeleted",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "GetDeleted"
+              ]
+            },
+            "description": "Backend maintainer endpoint (Swagger) - not used by the app."
+          }
+        },
+        {
+          "name": "GetDeleted users - by a Teacher (not allowed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/GetDeleted",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "GetDeleted"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "RestoreById user - Admin restores the Teacher (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Message mentions \\\"was restored\\\"\", () => pm.expect(pm.response.json().message).to.include(\"was restored\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/RestoreById?id={{delUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "RestoreById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delUserId}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Users - restored Teacher is listed again",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Restored Teacher is back\", () => pm.expect(pm.response.json().map(u => u.id)).to.include(Number(pm.collectionVariables.get(\"delUserId\"))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Login - restored Teacher can log in again",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"loginId\": \"{{delLoginId}}\",\n  \"password\": \"{{delTempPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "RestoreById user - not deleted (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Message mentions \\\"is not deleted\\\"\", () => pm.expect(pm.response.json().message).to.include(\"is not deleted\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/RestoreById?id={{delUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "RestoreById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delUserId}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "RestoreById user - by a Teacher (not allowed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/RestoreById?id={{delUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "RestoreById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delUserId}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "HardDeleteById user - by a Teacher (not allowed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/HardDeleteById?id={{delUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "HardDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delUserId}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "HardDeleteById user - Teacher with marks and subjects (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Message mentions \\\"Keep the account soft-deleted\\\"\", () => pm.expect(pm.response.json().message).to.include(\"Keep the account soft-deleted\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/HardDeleteById?id=3",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "HardDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "3"
+                }
+              ]
+            },
+            "description": "Foreign keys: marks and subjects still point to Sania, so the row cannot be removed."
+          }
+        },
+        {
+          "name": "HardDeleteById user - own Admin account (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Message mentions \\\"your own account\\\"\", () => pm.expect(pm.response.json().message).to.include(\"your own account\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/HardDeleteById?id=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "HardDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "SoftDeleteById user - delete the Teacher again",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/SoftDeleteById?id={{delUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "SoftDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delUserId}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "HardDeleteById user - Admin removes the Teacher for ever (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Message mentions \\\"permanently deleted\\\"\", () => pm.expect(pm.response.json().message).to.include(\"permanently deleted\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/HardDeleteById?id={{delUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "HardDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delUserId}}"
+                }
+              ]
+            },
+            "description": "Backend maintainer endpoint (Swagger) - the app never calls it."
+          }
+        },
+        {
+          "name": "GetDeleted users - gone for ever after the hard delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Not in the database any more\", () => pm.expect(pm.response.json().map(u => u.id)).to.not.include(Number(pm.collectionVariables.get(\"delUserId\"))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/GetDeleted",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "GetDeleted"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "HardDeleteById user - already gone (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/HardDeleteById?id={{delUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "HardDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delUserId}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Create class - a class to delete (Chemistry -> Sania)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// a new section every run (max 5 characters), so the collection can be run again",
+                  "pm.collectionVariables.set(\"delSection\", \"D\" + Math.floor(100 + Math.random() * 900));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201 Created\", () => pm.response.to.have.status(201));",
+                  "const k = pm.response.json();",
+                  "pm.collectionVariables.set(\"delClassId\", k.id);",
+                  "pm.collectionVariables.set(\"delClassName\", k.gradeName + \" - \" + k.section);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gradeName\": \"Class 12\",\n  \"section\": \"{{delSection}}\",\n  \"classTeacherId\": null,\n  \"subjectTeachers\": [\n    {\n      \"subjectId\": 4,\n      \"teacherId\": 3\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Add student to the class to delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201 Created\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"delStudentId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/{{delClassId}}/students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "{{delClassId}}",
+                "students"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Temp Student\",\n  \"rollNo\": \"1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "My subjects - Sania sees the new class",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"New class is in her list\", () => pm.expect(pm.response.json().map(a => a.className)).to.include(pm.collectionVariables.get(\"delClassName\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assignments/mine",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assignments",
+                "mine"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "SoftDeleteById class - by a Teacher (not allowed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/SoftDeleteById?id={{delClassId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "SoftDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delClassId}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "SoftDeleteById class - not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/SoftDeleteById?id=99999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "SoftDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "99999"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "SoftDeleteById class - Admin deletes the class (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Message mentions \\\"students and marks are kept\\\"\", () => pm.expect(pm.response.json().message).to.include(\"students and marks are kept\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/SoftDeleteById?id={{delClassId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "SoftDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delClassId}}"
+                }
+              ]
+            },
+            "description": "Soft delete: classes.isDeleted = 1, students / subjects / marks stay in MySQL."
+          }
+        },
+        {
+          "name": "Overview - deleted class is hidden",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Deleted class is not listed\", () => pm.expect(pm.response.json().classes.map(k => k.id)).to.not.include(Number(pm.collectionVariables.get(\"delClassId\"))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "My subjects - Sania no longer sees the deleted class",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Deleted class left her list\", () => pm.expect(pm.response.json().map(a => a.className)).to.not.include(pm.collectionVariables.get(\"delClassName\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assignments/mine",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assignments",
+                "mine"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Tracker - deleted class (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/{{delClassId}}/tracker",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "{{delClassId}}",
+                "tracker"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Result card - student of the deleted class (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/students/{{delStudentId}}/report-card",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                "{{delStudentId}}",
+                "report-card"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Create class - same name as the deleted class (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Message mentions \\\"was deleted earlier\\\"\", () => pm.expect(pm.response.json().message).to.include(\"was deleted earlier\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gradeName\": \"Class 12\",\n  \"section\": \"{{delSection}}\",\n  \"classTeacherId\": null,\n  \"subjectTeachers\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GetDeleted classes - Admin sees the deleted class",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const k = pm.response.json().find(x => x.id === Number(pm.collectionVariables.get(\"delClassId\")));",
+                  "pm.test(\"Still stored with its student and subject\", () => { pm.expect(k).to.not.be.undefined; pm.expect(k.studentCount).to.eql(1); pm.expect(k.subjects).to.have.lengthOf(1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/GetDeleted",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "GetDeleted"
+              ]
+            },
+            "description": "Backend maintainer endpoint (Swagger) - not used by the app."
+          }
+        },
+        {
+          "name": "GetDeleted classes - by a Teacher (not allowed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/GetDeleted",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "GetDeleted"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "RestoreById class - Admin restores the class (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Message mentions \\\"was restored\\\"\", () => pm.expect(pm.response.json().message).to.include(\"was restored\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/RestoreById?id={{delClassId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "RestoreById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delClassId}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Overview - restored class is listed again",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Restored class is back\", () => pm.expect(pm.response.json().classes.map(k => k.id)).to.include(Number(pm.collectionVariables.get(\"delClassId\"))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "RestoreById class - not deleted (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Message mentions \\\"is not deleted\\\"\", () => pm.expect(pm.response.json().message).to.include(\"is not deleted\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/RestoreById?id={{delClassId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "RestoreById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delClassId}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "HardDeleteById class - by a Teacher (not allowed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/HardDeleteById?id={{delClassId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "HardDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delClassId}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "HardDeleteById class - 8-B has marks (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Message mentions \\\"keep it soft-deleted\\\"\", () => pm.expect(pm.response.json().message).to.include(\"keep it soft-deleted\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/HardDeleteById?id=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "HardDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "Results are never lost: a class with marks cannot be removed for ever."
+          }
+        },
+        {
+          "name": "Tracker 8-B - still there after the refused hard delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/2/tracker",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "2",
+                "tracker"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "HardDeleteById class - Admin removes the class for ever (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Message mentions \\\"permanently deleted\\\"\", () => pm.expect(pm.response.json().message).to.include(\"permanently deleted\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/HardDeleteById?id={{delClassId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "HardDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delClassId}}"
+                }
+              ]
+            },
+            "description": "No marks: its student, subject and the class row are removed in one transaction."
+          }
+        },
+        {
+          "name": "GetDeleted classes - gone for ever after the hard delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Not in the database any more\", () => pm.expect(pm.response.json().map(k => k.id)).to.not.include(Number(pm.collectionVariables.get(\"delClassId\"))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/GetDeleted",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "GetDeleted"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "HardDeleteById class - already gone (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/HardDeleteById?id={{delClassId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "HardDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{delClassId}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
     }
   ],
   "variable": [
@@ -5118,6 +7225,38 @@
     },
     {
       "key": "upperName",
+      "value": ""
+    },
+    {
+      "key": "delLoginId",
+      "value": ""
+    },
+    {
+      "key": "delTempPassword",
+      "value": ""
+    },
+    {
+      "key": "delToken",
+      "value": ""
+    },
+    {
+      "key": "delUserId",
+      "value": ""
+    },
+    {
+      "key": "delSection",
+      "value": ""
+    },
+    {
+      "key": "delClassId",
+      "value": ""
+    },
+    {
+      "key": "delClassName",
+      "value": ""
+    },
+    {
+      "key": "delStudentId",
       "value": ""
     }
   ]

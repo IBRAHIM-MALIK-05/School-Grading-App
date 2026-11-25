@@ -206,6 +206,18 @@ class ApiDataService implements DataService {
   }
 
   @override
+  Future<String> softDeleteUser(int userId) async {
+    final data = await _request('DELETE', '/users/SoftDeleteById?id=$userId');
+    return (data is Map && data['message'] != null) ? data['message'] : 'Account deleted.';
+  }
+
+  @override
+  Future<String> softDeleteClass(int classId) async {
+    final data = await _request('DELETE', '/classes/SoftDeleteById?id=$classId');
+    return (data is Map && data['message'] != null) ? data['message'] : 'Class deleted.';
+  }
+
+  @override
   Future<SchoolClass> editClass(
       int classId, String gradeName, String section, ClassTeachersRequest teachers) async {
     final data = await _request('PUT', '/classes/$classId', body: {

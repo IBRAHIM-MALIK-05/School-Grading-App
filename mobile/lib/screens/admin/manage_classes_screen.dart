@@ -3,6 +3,7 @@
 //  - Search by class name, Class Teacher or subject teacher
 //  - "New class": create a class and pick its teachers
 //  - "Edit" on each card: change the name, Class Teacher, subjects and their teachers
+//  - "Delete" on each card: soft delete (hidden in the app, kept in the database)
 
 import 'package:flutter/material.dart';
 
@@ -44,6 +45,29 @@ class _ClassesTabState extends State<ClassesTab> with AutomaticKeepAliveClientMi
       MaterialPageRoute(builder: (_) => ClassEditorScreen(existing: existing)),
     );
     if (saved == true) _reload();
+  }
+
+  // Soft delete: the class leaves every list, but its students + marks stay in the database.
+  Future<void> _delete(SchoolClass c) async {
+    final ok = await confirmDialog(
+      context,
+      title: 'Delete ${c.name}?',
+      message: '${c.name} will be removed from the app, together with its subjects and '
+          '${c.studentCount} student(s). Their marks are kept in the database.\n\n'
+          'Its Class Teacher becomes free to lead another class.',
+      confirmText: 'Delete',
+      isDanger: true,
+    );
+    if (!ok || !mounted) return;
+
+    try {
+      final message = await dataService.softDeleteClass(c.id);
+      if (!mounted) return;
+      showMessage(context, message);
+      _reload();
+    } catch (e) {
+      if (mounted) showMessage(context, errorText(e), isError: true);
+    }
   }
 
   bool _matches(SchoolClass c) {
@@ -126,6 +150,12 @@ class _ClassesTabState extends State<ClassesTab> with AutomaticKeepAliveClientMi
                   onPressed: () => _openEditor(existing: c),
                   icon: const Icon(Icons.edit_outlined, size: 18),
                   label: Text('Edit', semanticsLabel: 'Edit ${c.name}'),
+                ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.delete_outline, color: AppColors.danger),
+                  tooltip: 'Delete ${c.name}',
+                  onPressed: () => _delete(c),
                 ),
               ],
             ),

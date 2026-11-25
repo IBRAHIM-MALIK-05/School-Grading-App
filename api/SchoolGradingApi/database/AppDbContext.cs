@@ -53,6 +53,12 @@ namespace SchoolGradingApi.database
                 .HasMaxLength(20)
                 .IsRequired();
 
+            // Soft delete: EF adds "WHERE isDeleted = 0" to EVERY query on users by itself,
+            // so a deleted user disappears from lists, pickers and login without extra code.
+            // Only GetDeleted / RestoreById / HardDeleteById use .IgnoreQueryFilters() to see them.
+            modelBuilder.Entity<AppUser>()
+                .HasQueryFilter(e => !e.isDeleted);
+
             // ---------------- subjects ----------------
             modelBuilder.Entity<Subject>().ToTable("subjects");
 
@@ -81,6 +87,11 @@ namespace SchoolGradingApi.database
             modelBuilder.Entity<SchoolClass>()
                 .HasIndex(e => new { e.GradeName, e.Section })
                 .IsUnique();                      // only one "Class 8 - B"
+
+            // Soft delete: deleted classes are left out of every query automatically
+            // (and so are their students / subjects when loaded through the class).
+            modelBuilder.Entity<SchoolClass>()
+                .HasQueryFilter(e => !e.isDeleted);
 
             // classes.ClassTeacherId -> users.Id  (a teacher leads at most 1 class)
             modelBuilder.Entity<SchoolClass>()

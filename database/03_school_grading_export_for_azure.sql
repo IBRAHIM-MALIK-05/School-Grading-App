@@ -26,6 +26,8 @@ SET time_zone = "+00:00";
 
 --
 -- Table structure for table `classes`
+-- (`isDeleted` = soft delete, added later with the EF migration AddSoftDelete -
+--  see database/05_add_soft_delete_generated_by_ef.sql)
 --
 
 DROP TABLE IF EXISTS `classes`;
@@ -35,6 +37,7 @@ CREATE TABLE IF NOT EXISTS `classes` (
   `Section` varchar(5) NOT NULL,
   `ClassTeacherId` int(11) DEFAULT NULL,
   `ResultsPublishedAt` datetime(6) DEFAULT NULL,
+  `isDeleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`Id`),
   UNIQUE KEY `IX_classes_GradeName_Section` (`GradeName`,`Section`),
   UNIQUE KEY `IX_classes_ClassTeacherId` (`ClassTeacherId`)
@@ -44,12 +47,12 @@ CREATE TABLE IF NOT EXISTS `classes` (
 -- Dumping data for table `classes`
 --
 
-INSERT INTO `classes` (`Id`, `GradeName`, `Section`, `ClassTeacherId`, `ResultsPublishedAt`) VALUES
-(1, 'Class 8', 'A', 4, NULL),
-(2, 'Class 8', 'B', 3, NULL),
-(3, 'Class 9', 'A', 5, NULL),
-(4, 'Class 9', 'B', 6, NULL),
-(5, 'Class 9', 'C', NULL, NULL);
+INSERT INTO `classes` (`Id`, `GradeName`, `Section`, `ClassTeacherId`, `ResultsPublishedAt`, `isDeleted`) VALUES
+(1, 'Class 8', 'A', 4, NULL, 0),
+(2, 'Class 8', 'B', 3, NULL, 0),
+(3, 'Class 9', 'A', 5, NULL, 0),
+(4, 'Class 9', 'B', 6, NULL, 0),
+(5, 'Class 9', 'C', NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -251,6 +254,7 @@ INSERT INTO `teaching_assignments` (`Id`, `ClassId`, `SubjectId`, `TeacherId`, `
 
 --
 -- Table structure for table `users`
+-- (`isDeleted` = soft delete, added with the EF migration AddSoftDelete)
 --
 
 DROP TABLE IF EXISTS `users`;
@@ -263,6 +267,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `Role` varchar(20) NOT NULL,
   `MustChangePassword` tinyint(1) NOT NULL,
   `CreatedAt` datetime(6) NOT NULL,
+  `isDeleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`Id`),
   UNIQUE KEY `IX_users_LoginId` (`LoginId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -271,13 +276,13 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`Id`, `FullName`, `LoginId`, `ContactEmail`, `PasswordHash`, `Role`, `MustChangePassword`, `CreatedAt`) VALUES
-(1, 'School Admin', 'admin@school.com', NULL, '$2a$11$c6gJO2BSfKjGK2cigDfJZOnxFT6ddgxsJnwSCAYt2VHHGDpaTrTk2', 'admin', 0, '2026-11-20 09:00:00.000000'),
-(2, 'VP Sarah', 'vp@school.com', NULL, '$2a$11$knbs2jFie66WoIHXYKVkOetGaC0bkXmUDHQmjGEIDfPLqP2D9rREq', 'vp', 0, '2026-11-20 09:00:00.000000'),
-(3, 'Teacher Sania', 'sania@school.com', NULL, '$2a$11$zUYQ3hSJRte1VA7nbAlzwO0h9woXmWqkT0LuUm2mVhfYVeCCWoWfi', 'teacher', 0, '2026-11-20 09:00:00.000000'),
-(4, 'Teacher Ahsan', 'ahsan@school.com', NULL, '$2a$11$PvGvQ3bx/UDjVC9CcTBFF.POtBi5GnNJ0HOyAt4fhTsvU1IDEzEoa', 'teacher', 0, '2026-11-20 09:00:00.000000'),
-(5, 'Teacher Maryam', 'maryam@school.com', NULL, '$2a$11$iHSQXgmL3I4mPMVdCiK...me1Q.I8AZCK/4fcH.MwqdJ0hXSqa5CK', 'teacher', 0, '2026-11-20 09:00:00.000000'),
-(6, 'Teacher Usman', 'usman@school.com', NULL, '$2a$11$kl2OEPRuYn2EsnpUzv8bbeuzGlNUJyCiLAf6l49ujBC6ygeilXizW', 'teacher', 0, '2026-11-20 09:00:00.000000');
+INSERT INTO `users` (`Id`, `FullName`, `LoginId`, `ContactEmail`, `PasswordHash`, `Role`, `MustChangePassword`, `CreatedAt`, `isDeleted`) VALUES
+(1, 'School Admin', 'admin@school.com', NULL, '$2a$11$c6gJO2BSfKjGK2cigDfJZOnxFT6ddgxsJnwSCAYt2VHHGDpaTrTk2', 'admin', 0, '2026-11-20 09:00:00.000000', 0),
+(2, 'VP Sarah', 'vp@school.com', NULL, '$2a$11$knbs2jFie66WoIHXYKVkOetGaC0bkXmUDHQmjGEIDfPLqP2D9rREq', 'vp', 0, '2026-11-20 09:00:00.000000', 0),
+(3, 'Teacher Sania', 'sania@school.com', NULL, '$2a$11$zUYQ3hSJRte1VA7nbAlzwO0h9woXmWqkT0LuUm2mVhfYVeCCWoWfi', 'teacher', 0, '2026-11-20 09:00:00.000000', 0),
+(4, 'Teacher Ahsan', 'ahsan@school.com', NULL, '$2a$11$PvGvQ3bx/UDjVC9CcTBFF.POtBi5GnNJ0HOyAt4fhTsvU1IDEzEoa', 'teacher', 0, '2026-11-20 09:00:00.000000', 0),
+(5, 'Teacher Maryam', 'maryam@school.com', NULL, '$2a$11$iHSQXgmL3I4mPMVdCiK...me1Q.I8AZCK/4fcH.MwqdJ0hXSqa5CK', 'teacher', 0, '2026-11-20 09:00:00.000000', 0),
+(6, 'Teacher Usman', 'usman@school.com', NULL, '$2a$11$kl2OEPRuYn2EsnpUzv8bbeuzGlNUJyCiLAf6l49ujBC6ygeilXizW', 'teacher', 0, '2026-11-20 09:00:00.000000', 0);
 
 -- --------------------------------------------------------
 
@@ -320,7 +325,8 @@ CREATE TABLE IF NOT EXISTS `__efmigrationshistory` (
 
 INSERT INTO `__efmigrationshistory` (`MigrationId`, `ProductVersion`) VALUES
 ('20261124031825_InitialCreate', '10.0.12'),
-('20261125192922_AddStudentRemovals', '10.0.12');
+('20261125192922_AddStudentRemovals', '10.0.12'),
+('20261125213126_AddSoftDelete', '10.0.12');
 
 --
 -- Constraints for dumped tables

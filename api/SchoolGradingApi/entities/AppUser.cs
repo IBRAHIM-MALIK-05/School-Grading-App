@@ -23,5 +23,9 @@ namespace SchoolGradingApi.entities
         public bool MustChangePassword { get; set; }
 
         public DateTime CreatedAt { get; set; }
+
+        // Soft delete (same as Assignment 2): true = "deleted" by the Admin.
+        // The row stays in MySQL, but the user is hidden everywhere and cannot log in.
+        public bool isDeleted { get; set; }
     }
 }
