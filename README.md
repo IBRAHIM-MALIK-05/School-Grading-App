@@ -13,7 +13,7 @@ A school result-management system: **Flutter app → ASP.NET Core Web API (.NET 
 ## Demo logins (password `123` for all)
 | Login ID | Role |
 |---|---|
-| `admin@school.com` | Admin |
+| `admin@school.com` | Admin (use **Login as Admin** on the login screen) |
 | `vp@school.com` | Principal / VP |
 | `sania@school.com` | Teacher (Chemistry, Biology) + Class Teacher of 8-B |
 | `ahsan@school.com` | Teacher (English) + Class Teacher of 8-A |
@@ -23,19 +23,26 @@ A school result-management system: **Flutter app → ASP.NET Core Web API (.NET 
 ## Who can do what
 | Action | Admin | Class Teacher (own class) | Subject Teacher | Principal / VP |
 |---|---|---|---|---|
-| Create accounts, reset passwords | ✓ | | | |
-| Create a class, assign Class Teacher + subject teachers | ✓ | | | |
+| Create / edit accounts (Subject → Class duties), reset passwords | ✓ | | | |
+| Create / edit classes (name, Class Teacher, subjects + teachers) | ✓ | | | |
+| Add / rename subjects, delete unused subjects | ✓ | | | |
 | Add / delete students (no editing – delete and add again) | ✓ | ✓ | ✗ 403 | |
 | Enter marks, Save Progress, Review & Submit | | (own subjects) | ✓ | |
 | Class tracker + result-card readiness | ✓ (view) | ✓ | | ✓ (view) |
 | Result card | ✓ (view) | ✓ + **Print / Save PDF** | ✗ 403 | ✓ (view) |
 | Publish / unpublish results | | ✓ | | |
 
+**Two login screens:** Teachers and the Principal / VP use the default *Teacher / Vice Principal
+Login*; the Admin taps **Login as Admin**. The API refuses an account on the wrong screen (403),
+so nobody gets in through the wrong door. The **Admin Panel** has three tabs – Users, Classes,
+Subjects – each with a search bar, and every form uses search-as-you-type pickers.
+
 Deleting a student removes them and all their marks from every subject of the class; the
 subject teachers then see *"… was removed by the Class Teacher of …"* on their marks screen.
 A sample printed result card is in `docs/samples/result_card_sample.pdf`
 (made by `flutter test test/report_card_pdf_test.dart`); screenshots of these features are
-`docs/screenshots/m7b_*.png` (`tools/screenshots/capture_m7b_features.py`).
+`docs/screenshots/m7b_*.png` (`tools/screenshots/capture_m7b_features.py`); the login and
+Admin Panel screens are `m7c_*.png` (`tools/screenshots/capture_m7c_admin.py`).
 
 ## Run the API (local)
 1. Start **Apache + MySQL** in the XAMPP Control Panel (database `school_grading`).
@@ -73,7 +80,7 @@ First time only (creates the tables + demo data): Visual Studio → *Package Man
 ## Test the API (Postman / Newman)
 - Local: with the API running, double-click `postman/run_tests_local.cmd`.
 - Azure: double-click `postman/run_tests_azure.cmd` (wakes the server up first).
-- Both run 70 requests / 152 tests and write an HTML report to `postman/reports/`
+- Both run 101 requests / 212 tests and write an HTML report to `postman/reports/`
   (login tokens are removed from the report by `postman/redact_tokens.js`).
   Or import the JSON files in `postman/` into the Postman app and pick the *Local* or *Azure* environment.
 - Afterwards, reset the cloud data: `python tools/azure/import_to_azure.py --reset`.

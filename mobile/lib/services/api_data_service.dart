@@ -98,9 +98,9 @@ class ApiDataService implements DataService {
   // ======================= Auth =======================
 
   @override
-  Future<AppUser> login(String loginId, String password) async {
+  Future<AppUser> login(String loginId, String password, {String? portal}) async {
     final data = await _request('POST', '/auth/login',
-        body: {'loginId': loginId, 'password': password});
+        body: {'loginId': loginId, 'password': password, 'portal': ?portal});
     _token = data['token'];
     _me = AppUser.fromJson(data['user']);
     return _me!;
@@ -138,6 +138,12 @@ class ApiDataService implements DataService {
   Future<List<AppUser>> getUsers() async {
     final data = await _request('GET', '/users');
     return listFromJson(data, AppUser.fromJson);
+  }
+
+  @override
+  Future<AppUser> updateUser(int userId, EditUserRequest request) async {
+    final data = await _request('PUT', '/users/$userId', body: request.toJson());
+    return AppUser.fromJson(data);
   }
 
   // ======================= Classes =======================
@@ -178,6 +184,37 @@ class ApiDataService implements DataService {
   Future<List<SubjectInfo>> getSubjects() async {
     final data = await _request('GET', '/subjects');
     return listFromJson(data, SubjectInfo.fromJson);
+  }
+
+  @override
+  Future<SubjectInfo> createSubject(String name, int maxMarks) async {
+    final data = await _request('POST', '/subjects', body: {'name': name, 'maxMarks': maxMarks});
+    return SubjectInfo.fromJson(data);
+  }
+
+  @override
+  Future<SubjectInfo> updateSubject(int subjectId, String name, int maxMarks) async {
+    final data =
+        await _request('PUT', '/subjects/$subjectId', body: {'name': name, 'maxMarks': maxMarks});
+    return SubjectInfo.fromJson(data);
+  }
+
+  @override
+  Future<String> deleteSubject(int subjectId) async {
+    final data = await _request('DELETE', '/subjects/$subjectId');
+    return (data is Map && data['message'] != null) ? data['message'] : 'Subject deleted.';
+  }
+
+  @override
+  Future<SchoolClass> editClass(
+      int classId, String gradeName, String section, ClassTeachersRequest teachers) async {
+    final data = await _request('PUT', '/classes/$classId', body: {
+      'gradeName': gradeName,
+      'section': section,
+      'classTeacherId': teachers.classTeacherId,
+      'subjectTeachers': teachers.subjectTeachersJson,
+    });
+    return SchoolClass.fromJson(data);
   }
 
   @override

@@ -114,11 +114,17 @@ class SubjectInfo {
   final int id;
   final String name;
   final int maxMarks;
+  final int classCount; // in how many classes it is taught
 
-  const SubjectInfo({required this.id, required this.name, required this.maxMarks});
+  const SubjectInfo(
+      {required this.id, required this.name, required this.maxMarks, this.classCount = 0});
 
-  factory SubjectInfo.fromJson(Map<String, dynamic> json) =>
-      SubjectInfo(id: json['id'], name: json['name'], maxMarks: json['maxMarks']);
+  factory SubjectInfo.fromJson(Map<String, dynamic> json) => SubjectInfo(
+        id: json['id'],
+        name: json['name'],
+        maxMarks: json['maxMarks'],
+        classCount: json['classCount'] ?? 0,
+      );
 }
 
 // What the Admin sends to create a class or change its teachers.

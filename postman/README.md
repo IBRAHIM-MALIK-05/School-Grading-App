@@ -2,14 +2,14 @@
 
 | File | What it is |
 |---|---|
-| `SchoolGrading.postman_collection.json` | 70 requests in 8 folders, each with test scripts (152 checks in total) |
+| `SchoolGrading.postman_collection.json` | 101 requests in 9 folders, each with test scripts (212 checks in total) |
 | `SchoolGrading_Local.postman_environment.json` | `baseUrl = http://localhost:5080/api` |
 | `SchoolGrading_Azure.postman_environment.json` | `baseUrl = https://school-grading-api-bcgi.azurewebsites.net/api` (live cloud API) |
 | `run_tests_local.cmd` | Runs the whole collection with **Newman** against the local API and writes the HTML report |
 | `run_tests_azure.cmd` | The same against **Azure** (wakes up the free F1 server first) |
 | `reports/local_test_report.html` | Latest HTML report (open in a browser) |
 | `reports/local_cli_output.txt` | The same run as plain text |
-| `reports/azure_test_report.html`, `reports/azure_cli_output.txt` | Latest run against Azure (70 requests, 152 tests, 0 failures) |
+| `reports/azure_test_report.html`, `reports/azure_cli_output.txt` | Latest run against Azure (101 requests, 212 tests, 0 failures) |
 
 ## Run in the Postman app
 1. Postman → **Import** → select both JSON files.
@@ -44,14 +44,28 @@ Node.js in `tools/node` and Newman in `tools/postman-runner` – nothing is inst
    delete removes the student from all subjects and the subject teachers see a removal notice.
 7. **Publish & lock:** Class Teacher publishes 9-A; adding students / saving marks in a
    locked class → 409; only the Class Teacher may publish (403); unpublish again.
+   *Folder 1 also checks the two login screens:* Admin on Admin Login (200), Teacher/VP on Staff
+   Login (200), Admin on Staff Login and Teacher on Admin Login (403, no token), and a wrong
+   password on Admin Login (401, so the role of an account is never revealed).
+   *Folder 2 also checks* that a Principal/VP cannot get subjects and that the same
+   subject + class cannot be picked twice (400).
 8. **Admin – classes & teachers:** list subjects; create a class with subject teachers (201);
    duplicate name / teacher already leading another class (409); missing section (400);
    teacher not allowed (403); change the Class Teacher and subject teachers (200); removing a
-   subject that already has marks is refused (409) and nothing changes.
+   subject that already has marks is refused (409) and nothing changes. Then the whole class is
+   edited at once (`PUT /classes/{id}`: rename + add Physics, 200; name of another class 409;
+   teacher 403) and the new teacher is edited (`PUT /users/{id}`: new name, Physics moves to them,
+   Biology is added, 200); taking away subjects that have marks (409), a class that already has
+   a Class Teacher (409), the Admin account (400) and a teacher editing users (403) are refused.
+9. **Admin – subjects:** add a subject (201); the same name in CAPITALS (409); empty name or
+   max marks 0 (400); rename + new max marks (200); rename to an existing subject (409); max
+   below a mark already given (409); not found (404); teacher (403); delete a subject that is
+   taught in classes (409); delete the unused new subject (200); back to 5 subjects.
 
 The collection cleans up after itself (deletes the student it adds, unpublishes 9-A),
 so it can be run again and again. Each run adds one new teacher account (`ali@school.com`,
-`ali2@school.com`, …) and one new class (`Class 10 - T<random>`).
+`ali2@school.com`, …) and one new class (`Class 11 - T<random>` after its rename); the subject it
+adds is deleted again.
 
 
 ## Against Azure

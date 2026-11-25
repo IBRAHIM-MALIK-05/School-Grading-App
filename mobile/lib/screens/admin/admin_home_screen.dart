@@ -1,5 +1,8 @@
 // lib/screens/admin/admin_home_screen.dart
-// Admin home: list of all accounts + Reset Password + Create Account.
+// Admin Panel: three tabs, each with its own search bar and "add" button.
+//   Users    - accounts: search, Create account, Edit, Reset password
+//   Classes  - classes: search, New class, Edit (name, Class Teacher, subjects + teachers)
+//   Subjects - subjects: search, Add subject, Edit (rename / max marks), Delete if unused
 
 import 'package:flutter/material.dart';
 
@@ -8,19 +11,57 @@ import '../../services/current_service.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_theme.dart';
 import '../../widgets/async_views.dart';
+import '../../widgets/search_picker.dart';
 import 'create_account_screen.dart';
 import 'credentials_dialog.dart';
 import 'manage_classes_screen.dart';
+import 'manage_subjects_screen.dart';
 
-class AdminHomeScreen extends StatefulWidget {
+class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key});
 
   @override
-  State<AdminHomeScreen> createState() => _AdminHomeScreenState();
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Admin Panel'),
+          bottom: const TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            tabs: [
+              Tab(icon: Icon(Icons.people_alt_outlined), text: 'Users'),
+              Tab(icon: Icon(Icons.class_outlined), text: 'Classes'),
+              Tab(icon: Icon(Icons.menu_book_outlined), text: 'Subjects'),
+            ],
+          ),
+        ),
+        drawer: const AppDrawer(),
+        body: const TabBarView(
+          children: [UsersTab(), ClassesTab(), SubjectsTab()],
+        ),
+      ),
+    );
+  }
 }
 
-class _AdminHomeScreenState extends State<AdminHomeScreen> {
+// ---------------------------------------------------------------- Users tab
+class UsersTab extends StatefulWidget {
+  const UsersTab({super.key});
+
+  @override
+  State<UsersTab> createState() => _UsersTabState();
+}
+
+class _UsersTabState extends State<UsersTab> with AutomaticKeepAliveClientMixin {
   late Future<List<AppUser>> _usersFuture;
+  String _query = '';
+  String _roleFilter = 'all'; // all / teacher / vp
+
+  @override
+  bool get wantKeepAlive => true; // keep the search when switching tabs
 
   @override
   void initState() {
@@ -33,16 +74,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     await _usersFuture;
   }
 
-  Future<void> _openCreateAccount() async {
+  Future<void> _openForm({AppUser? existing}) async {
     await Navigator.push(context,
-        MaterialPageRoute(builder: (_) => const CreateAccountScreen()));
-    _reload(); // show the new user
-  }
-
-  Future<void> _openManageClasses() async {
-    await Navigator.push(
-        context, MaterialPageRoute(builder: (_) => const ManageClassesScreen()));
-    _reload(); // Class Teacher labels may have changed
+        MaterialPageRoute(builder: (_) => CreateAccountScreen(existing: existing)));
+    _reload(); // show the new / edited user
   }
 
   Future<void> _resetPassword(AppUser user) async {
@@ -66,6 +101,16 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     }
   }
 
+  bool _matches(AppUser u) {
+    if (_roleFilter != 'all' && u.role != _roleFilter) return false;
+    final q = _query.trim().toLowerCase();
+    return q.isEmpty ||
+        u.fullName.toLowerCase().contains(q) ||
+        u.loginId.toLowerCase().contains(q) ||
+        u.roleLabel.toLowerCase().contains(q) ||
+        (u.classTeacherOfClassName?.toLowerCase().contains(q) ?? false);
+  }
+
   Color _roleColor(String role) {
     if (role == 'admin') return AppColors.danger;
     if (role == 'vp') return AppColors.success;
@@ -74,98 +119,114 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final me = dataService.currentUser!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin • Users'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: _reload,
-          ),
-        ],
-      ),
-      drawer: AppDrawer(onReturn: _reload),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openCreateAccount,
+        heroTag: 'users',
+        onPressed: () => _openForm(),
         icon: const Icon(Icons.person_add_alt_1),
         label: const Text('Create account'),
       ),
-      body: FutureBuilder<List<AppUser>>(
-        future: _usersFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const LoadingView(message: 'Loading users...');
-          }
-          if (snapshot.hasError) {
-            return ErrorView(error: snapshot.error!, onRetry: _reload);
-          }
-          final users = snapshot.data!;
-          if (users.isEmpty) return const EmptyView(message: 'No users yet.');
-
-          return RefreshIndicator(
-            onRefresh: _reload,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: SearchBox(
+                hint: 'Search users by name, login ID or class',
+                onChanged: (v) => setState(() => _query = v)),
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
               children: [
-                Text('Welcome ${me.fullName}',
-                    style: const TextStyle(fontSize: 22)),
-                const SizedBox(height: 4),
-                Text('${users.length} accounts',
-                    style: const TextStyle(color: AppColors.muted)),
-                const SizedBox(height: 16),
-                // Manage Classes: create a class, assign its Class Teacher + subject teachers
-                Card(
-                  color: Colors.blue.shade50,
-                  child: ListTile(
-                    leading: const Icon(Icons.class_outlined, color: AppColors.primary),
-                    title: const Text('Manage Classes',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text('Create a class • assign Class Teacher & subject teachers'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: _openManageClasses,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                for (final user in users)
-                  Card(
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: _roleColor(user.role).withValues(alpha: 0.12),
-                        foregroundColor: _roleColor(user.role),
-                        child: Text(user.fullName[0]),
-                      ),
-                      title: Text(user.fullName),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(user.loginId),
-                          Text(user.isClassTeacher
-                              ? 'Class Teacher • ${user.classTeacherOfClassName}'
-                              : user.roleLabel),
-                          if (user.mustChangePassword)
-                            const Text('Must change password',
-                                style: TextStyle(
-                                    color: AppColors.warning,
-                                    fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                      isThreeLine: true,
-                      trailing: user.id == me.id
-                          ? const Text('You', style: TextStyle(color: AppColors.muted))
-                          : IconButton(
-                              icon: const Icon(Icons.lock_reset),
-                              tooltip: 'Reset password',
-                              onPressed: () => _resetPassword(user),
-                            ),
+                for (final f in const [('all', 'All'), ('teacher', 'Teachers'), ('vp', 'Principal / VP')])
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(f.$2),
+                      selected: _roleFilter == f.$1,
+                      onSelected: (_) => setState(() => _roleFilter = f.$1),
                     ),
                   ),
               ],
             ),
-          );
-        },
+          ),
+          Expanded(
+            child: FutureBuilder<List<AppUser>>(
+              future: _usersFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const LoadingView(message: 'Loading users...');
+                }
+                if (snapshot.hasError) {
+                  return ErrorView(error: snapshot.error!, onRetry: _reload);
+                }
+                final all = snapshot.data!;
+                final users = all.where(_matches).toList();
+
+                return RefreshIndicator(
+                  onRefresh: _reload,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                    children: [
+                      Text('Welcome ${me.fullName}  •  showing ${users.length} of ${all.length} accounts',
+                          style: const TextStyle(color: AppColors.muted)),
+                      const SizedBox(height: 8),
+                      if (users.isEmpty) const EmptyView(message: 'No user matches your search.'),
+                      for (final user in users) _userCard(user, me),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _userCard(AppUser user, AppUser me) {
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: _roleColor(user.role).withValues(alpha: 0.12),
+          foregroundColor: _roleColor(user.role),
+          child: Text(user.fullName[0]),
+        ),
+        title: Text(user.fullName, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(user.loginId),
+            Text(user.isClassTeacher
+                ? 'Class Teacher • ${user.classTeacherOfClassName}'
+                : user.roleLabel),
+            if (user.mustChangePassword)
+              const Text('Must change password',
+                  style: TextStyle(color: AppColors.warning, fontWeight: FontWeight.w600)),
+          ],
+        ),
+        isThreeLine: true,
+        trailing: user.id == me.id || user.isAdmin
+            ? const Text('You', style: TextStyle(color: AppColors.muted))
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Edit ${user.fullName}',
+                    onPressed: () => _openForm(existing: user),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.lock_reset),
+                    tooltip: 'Reset password',
+                    onPressed: () => _resetPassword(user),
+                  ),
+                ],
+              ),
       ),
     );
   }

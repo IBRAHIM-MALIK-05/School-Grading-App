@@ -19,7 +19,8 @@ abstract class DataService {
   AppUser? get currentUser;
 
   // ---------- Auth ----------
-  Future<AppUser> login(String loginId, String password); // POST /api/auth/login
+  // portal: 'staff' (Teacher / VP Login) or 'admin' (Login as Admin); the API refuses the wrong one
+  Future<AppUser> login(String loginId, String password, {String? portal}); // POST /api/auth/login
   Future<void> changePassword(String currentPassword, String newPassword); // POST /api/auth/change-password
   Future<Credentials> register(NewAccountRequest request); // POST /api/auth/register (Admin)
   Future<Credentials> resetPassword(int userId); // POST /api/auth/reset-password/{userId} (Admin)
@@ -27,6 +28,7 @@ abstract class DataService {
 
   // ---------- Users ----------
   Future<List<AppUser>> getUsers(); // GET /api/users (Admin)
+  Future<AppUser> updateUser(int userId, EditUserRequest request); // PUT /api/users/{id} (Admin)
 
   // ---------- Classes ----------
   Future<SchoolOverview> getOverview(); // GET /api/classes (Admin, VP)
@@ -34,10 +36,15 @@ abstract class DataService {
   Future<void> setPublished(int classId, bool publish); // PUT /api/classes/{id}/publish
   Future<ClassStudents> getClassStudents(int classId); // GET /api/classes/{id}/students
   Future<List<SubjectInfo>> getSubjects(); // GET /api/subjects (Admin)
+  Future<SubjectInfo> createSubject(String name, int maxMarks); // POST /api/subjects (Admin)
+  Future<SubjectInfo> updateSubject(int subjectId, String name, int maxMarks); // PUT /api/subjects/{id} (Admin)
+  Future<String> deleteSubject(int subjectId); // DELETE /api/subjects/{id} (Admin)
   Future<SchoolClass> createClass(String gradeName, String section,
       ClassTeachersRequest teachers); // POST /api/classes (Admin)
   Future<SchoolClass> updateClassTeachers(
       int classId, ClassTeachersRequest teachers); // PUT /api/classes/{id}/assignments (Admin)
+  Future<SchoolClass> editClass(int classId, String gradeName, String section,
+      ClassTeachersRequest teachers); // PUT /api/classes/{id} (Admin: name + all teachers)
 
   // ---------- Students ----------
   Future<Student> addStudent(int classId, String fullName, String rollNo); // POST /api/classes/{id}/students

@@ -1,7 +1,8 @@
 // lib/screens/admin/manage_classes_screen.dart
-// Admin > Manage Classes: every class with its Class Teacher and subject teachers.
-//  - "New class": create a class and pick its Class Teacher + subject teachers.
-//  - Tap a class: change its Class Teacher or who teaches each subject.
+// Admin Panel > Classes tab: every class with its Class Teacher and subject teachers.
+//  - Search by class name, Class Teacher or subject teacher
+//  - "New class": create a class and pick its teachers
+//  - "Edit" on each card: change the name, Class Teacher, subjects and their teachers
 
 import 'package:flutter/material.dart';
 
@@ -9,17 +10,22 @@ import '../../models/school_class.dart';
 import '../../services/current_service.dart';
 import '../../widgets/app_theme.dart';
 import '../../widgets/async_views.dart';
+import '../../widgets/search_picker.dart';
 import 'class_editor_screen.dart';
 
-class ManageClassesScreen extends StatefulWidget {
-  const ManageClassesScreen({super.key});
+class ClassesTab extends StatefulWidget {
+  const ClassesTab({super.key});
 
   @override
-  State<ManageClassesScreen> createState() => _ManageClassesScreenState();
+  State<ClassesTab> createState() => _ClassesTabState();
 }
 
-class _ManageClassesScreenState extends State<ManageClassesScreen> {
+class _ClassesTabState extends State<ClassesTab> with AutomaticKeepAliveClientMixin {
   late Future<SchoolOverview> _future;
+  String _query = '';
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -40,86 +46,118 @@ class _ManageClassesScreenState extends State<ManageClassesScreen> {
     if (saved == true) _reload();
   }
 
+  bool _matches(SchoolClass c) {
+    final q = _query.trim().toLowerCase();
+    return q.isEmpty ||
+        c.name.toLowerCase().contains(q) ||
+        (c.classTeacherName?.toLowerCase().contains(q) ?? false) ||
+        c.subjects.any((s) =>
+            s.subjectName.toLowerCase().contains(q) ||
+            (s.teacherName?.toLowerCase().contains(q) ?? false));
+  }
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manage Classes'),
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), tooltip: 'Refresh', onPressed: _reload),
-        ],
-      ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'classes',
         onPressed: () => _openEditor(),
         icon: const Icon(Icons.add),
         label: const Text('New class'),
       ),
-      body: FutureBuilder<SchoolOverview>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const LoadingView(message: 'Loading classes...');
-          }
-          if (snapshot.hasError) return ErrorView(error: snapshot.error!, onRetry: _reload);
-          final classes = snapshot.data!.classes;
-          if (classes.isEmpty) return const EmptyView(message: 'No classes yet. Tap "New class".');
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: SearchBox(
+                hint: 'Search classes or teachers',
+                onChanged: (v) => setState(() => _query = v)),
+          ),
+          Expanded(
+            child: FutureBuilder<SchoolOverview>(
+              future: _future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const LoadingView(message: 'Loading classes...');
+                }
+                if (snapshot.hasError) return ErrorView(error: snapshot.error!, onRetry: _reload);
+                final all = snapshot.data!.classes;
+                final classes = all.where(_matches).toList();
 
-          return RefreshIndicator(
-            onRefresh: _reload,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-              children: [
-                Text('${classes.length} classes • tap one to change its teachers',
-                    style: const TextStyle(color: AppColors.muted)),
-                const SizedBox(height: 12),
-                for (final c in classes) _classCard(c),
-              ],
+                return RefreshIndicator(
+                  onRefresh: _reload,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                    children: [
+                      Text('Showing ${classes.length} of ${all.length} classes',
+                          style: const TextStyle(color: AppColors.muted)),
+                      const SizedBox(height: 8),
+                      if (classes.isEmpty) const EmptyView(message: 'No class matches your search.'),
+                      for (final c in classes) _classCard(c),
+                    ],
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
 
   Widget _classCard(SchoolClass c) {
     return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _openEditor(existing: c),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 10, 6, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.class_outlined, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(c.name,
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                ),
+                Text('${c.studentCount} students', style: const TextStyle(color: AppColors.muted)),
+                TextButton.icon(
+                  onPressed: () => _openEditor(existing: c),
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: Text('Edit', semanticsLabel: 'Edit ${c.name}'),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                const Icon(Icons.person_pin_outlined, size: 18, color: AppColors.muted),
+                const SizedBox(width: 6),
+                Text(
+                  'Class Teacher: ${c.classTeacherName ?? 'not assigned'}',
+                  style: TextStyle(
+                      color: c.classTeacherName == null ? AppColors.warning : null,
+                      fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (c.subjects.isEmpty)
+              const Text('No subjects yet', style: TextStyle(color: AppColors.muted))
+            else
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
                 children: [
-                  const Icon(Icons.class_outlined, color: AppColors.primary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(c.name,
-                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-                  ),
-                  Text('${c.studentCount} students',
-                      style: const TextStyle(color: AppColors.muted)),
-                  const Icon(Icons.chevron_right),
+                  for (final s in c.subjects)
+                    Chip(
+                      visualDensity: VisualDensity.compact,
+                      label: Text('${s.subjectName} • ${s.teacherName ?? '-'}',
+                          style: const TextStyle(fontSize: 12)),
+                    ),
                 ],
               ),
-              const SizedBox(height: 6),
-              Text(
-                'Class Teacher: ${c.classTeacherName ?? 'not assigned'}',
-                style: TextStyle(
-                    color: c.classTeacherName == null ? AppColors.warning : null,
-                    fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                c.subjects.isEmpty
-                    ? 'No subject teachers yet'
-                    : c.subjects.map((s) => '${s.subjectName}: ${s.teacherName ?? '-'}').join('  •  '),
-                style: const TextStyle(fontSize: 13, color: AppColors.muted),
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );

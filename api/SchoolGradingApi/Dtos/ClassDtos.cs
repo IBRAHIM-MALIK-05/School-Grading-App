@@ -108,6 +108,17 @@ namespace SchoolGradingApi.Dtos
         public int Id { get; set; }
         public string Name { get; set; } = "";
         public int MaxMarks { get; set; }
+        public int ClassCount { get; set; }   // in how many classes it is taught
+    }
+
+    // POST /api/subjects and PUT /api/subjects/{id}
+    public class SaveSubjectDto
+    {
+        public const int MaxNameLength = 50;     // subjects.Name
+        public const int HighestMaxMarks = 1000;
+
+        public string Name { get; set; } = "";
+        public int MaxMarks { get; set; } = 100;
     }
 
     // PUT /api/classes/{id}/publish

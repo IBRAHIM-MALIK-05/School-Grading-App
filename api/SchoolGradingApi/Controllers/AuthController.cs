@@ -32,6 +32,16 @@ namespace SchoolGradingApi.Controllers
                 return Error(401, "Invalid Login ID or password.");
             }
 
+            // Admin Login vs Teacher / VP Login (only when the app says which screen was used).
+            // Checked AFTER the password, so it never reveals the role of an account to a stranger.
+            var portal = dto.Portal?.Trim().ToLower();
+            if (portal == "admin" && user.Role != "admin")
+                return Error(403, "This portal is for Admins only. Please use Staff Login.");
+            if (portal == "staff" && user.Role == "admin")
+                return Error(403, "This is an Admin account. Please use \"Login as Admin\".");
+            if (portal != null && portal != "admin" && portal != "staff")
+                return Error(400, "Portal must be \"admin\" or \"staff\".");
+
             var (token, expiresAt) = JwtHelper.CreateToken(user, _config);
             return Ok(new LoginResponseDto
             {
@@ -79,14 +89,15 @@ namespace SchoolGradingApi.Controllers
             // ----- check the input -----
             var fullName = dto.FullName.Trim();
             var email = dto.ContactEmail.Trim();
-            if (fullName == "")
-                return Error(400, "Full name is required.");
+            var pairs = dto.Assignments ?? new List<SubjectClassDto>();
+            var nameProblem = CheckNameAndEmail(fullName, email);
+            if (nameProblem != null) return nameProblem;
             if (dto.Role != "teacher" && dto.Role != "vp")
                 return Error(400, "Role must be 'teacher' or 'vp'.");
-            if (!Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
-                return Error(400, "Please enter a valid email address.");
-            if (dto.Role != "teacher" && (dto.ClassTeacherOfClassId != null || dto.AssignmentIds.Count > 0))
+            if (dto.Role != "teacher" && (dto.ClassTeacherOfClassId != null || dto.AssignmentIds.Count > 0 || pairs.Count > 0))
                 return Error(400, "Only a Teacher can be a Class Teacher or teach subjects.");
+            var pairProblem = CheckSubjectClassPairs(pairs);
+            if (pairProblem != null) return pairProblem;
 
             SchoolClass? classToLead = null;
             if (dto.ClassTeacherOfClassId != null)
@@ -131,6 +142,7 @@ namespace SchoolGradingApi.Controllers
             {
                 assignment.TeacherId = user.Id;
             }
+            GiveSubjectClasses(user.Id, pairs);    // "Mathematics -> Class 8 - A" picks
             _db.SaveChanges();
             transaction.Commit();                   // both saves succeed together (or neither)
 

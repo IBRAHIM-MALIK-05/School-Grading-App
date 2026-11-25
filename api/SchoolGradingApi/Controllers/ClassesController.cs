@@ -230,14 +230,8 @@ namespace SchoolGradingApi.Controllers
 
             var gradeName = (dto.GradeName ?? "").Trim();
             var section = (dto.Section ?? "").Trim().ToUpperInvariant();
-            if (gradeName == "" || section == "")
-                return Error(400, "Class name and section are required (e.g. \"Class 10\" and \"A\").");
-            if (gradeName.Length > CreateClassDto.MaxGradeNameLength)
-                return Error(400, "Class name can be at most " + CreateClassDto.MaxGradeNameLength + " characters.");
-            if (section.Length > CreateClassDto.MaxSectionLength)
-                return Error(400, "Section can be at most " + CreateClassDto.MaxSectionLength + " characters.");
-            if (_db.Classes.Any(c => c.GradeName == gradeName && c.Section == section))
-                return Error(409, gradeName + " - " + section + " already exists.");
+            var nameProblem = CheckClassName(gradeName, section, null);
+            if (nameProblem != null) return nameProblem;
 
             var schoolClass = new SchoolClass { GradeName = gradeName, Section = section };
 
@@ -276,22 +270,66 @@ namespace SchoolGradingApi.Controllers
 
             var schoolClass = ClassesWithDetails().FirstOrDefault(c => c.Id == id);
             if (schoolClass == null) return Error(404, "Class not found.");
+
+            var problem = ApplyTeachers(schoolClass, dto.ClassTeacherId, dto.SubjectTeachers);
+            if (problem != null) return problem;
+            _db.SaveChanges();   // everything in one transaction
+
+            var updated = ClassesWithDetails().First(c => c.Id == id);
+            return Ok(DtoMapper.ToSchoolClassDto(updated));
+        }
+
+        // 23) PUT /api/classes/{id}  -> Admin edits EVERYTHING of a class at once:
+        //     name + section, Class Teacher, subjects and their teachers (one transaction)
+        [HttpPut("{id}")]
+        public IActionResult EditClass(int id, CreateClassDto dto)
+        {
+            var me = GetCurrentUser();
+            if (me == null) return NotLoggedIn();
+            if (me.MustChangePassword) return MustChangePasswordFirst();
+            if (me.Role != "admin") return Error(403, "Only the Admin can edit classes.");
+
+            var schoolClass = ClassesWithDetails().FirstOrDefault(c => c.Id == id);
+            if (schoolClass == null) return Error(404, "Class not found.");
+
+            var gradeName = (dto.GradeName ?? "").Trim();
+            var section = (dto.Section ?? "").Trim().ToUpperInvariant();
+            var problem = CheckClassName(gradeName, section, id);
+            if (problem != null) return problem;
+
+            problem = ApplyTeachers(schoolClass, dto.ClassTeacherId, dto.SubjectTeachers);
+            if (problem != null) return problem;
+
+            schoolClass.GradeName = gradeName;
+            schoolClass.Section = section;
+            _db.SaveChanges();   // name + teachers together (or nothing)
+
+            var updated = ClassesWithDetails().First(c => c.Id == id);
+            return Ok(DtoMapper.ToSchoolClassDto(updated));
+        }
+
+        // ----- helpers for create / update -----
+
+        // Changes the Class Teacher (null = none) and the listed subjects (TeacherId null = remove).
+        // Only marks changes in EF; the caller saves. Returns an error, or null when everything is OK.
+        private IActionResult? ApplyTeachers(SchoolClass schoolClass, int? classTeacherId, List<SubjectTeacherDto>? subjectTeachers)
+        {
             string className = DtoMapper.ClassName(schoolClass);
             bool isPublished = schoolClass.ResultsPublishedAt != null;
 
             // ----- Class Teacher -----
-            if (dto.ClassTeacherId != schoolClass.ClassTeacherId)
+            if (classTeacherId != schoolClass.ClassTeacherId)
             {
-                if (dto.ClassTeacherId != null)
+                if (classTeacherId != null)
                 {
-                    var problem = CheckClassTeacher(dto.ClassTeacherId.Value, schoolClass.Id);
+                    var problem = CheckClassTeacher(classTeacherId.Value, schoolClass.Id);
                     if (problem != null) return problem;
                 }
-                schoolClass.ClassTeacherId = dto.ClassTeacherId;
+                schoolClass.ClassTeacherId = classTeacherId;
             }
 
             // ----- Subject teachers -----
-            var changes = dto.SubjectTeachers ?? new List<SubjectTeacherDto>();
+            var changes = subjectTeachers ?? new List<SubjectTeacherDto>();
             var subjectProblem = CheckSubjectTeachers(changes);
             if (subjectProblem != null) return subjectProblem;
 
@@ -323,13 +361,22 @@ namespace SchoolGradingApi.Controllers
                     existing.TeacherId = change.TeacherId.Value;   // marks + submitted status are kept
                 }
             }
-            _db.SaveChanges();   // everything in one transaction
-
-            var updated = ClassesWithDetails().First(c => c.Id == id);
-            return Ok(DtoMapper.ToSchoolClassDto(updated));
+            return null;
         }
 
-        // ----- helpers for create / update -----
+        // Class name + section: required, not too long, and not used by ANOTHER class
+        private IActionResult? CheckClassName(string gradeName, string section, int? thisClassId)
+        {
+            if (gradeName == "" || section == "")
+                return Error(400, "Class name and section are required (e.g. \"Class 10\" and \"A\").");
+            if (gradeName.Length > CreateClassDto.MaxGradeNameLength)
+                return Error(400, "Class name can be at most " + CreateClassDto.MaxGradeNameLength + " characters.");
+            if (section.Length > CreateClassDto.MaxSectionLength)
+                return Error(400, "Section can be at most " + CreateClassDto.MaxSectionLength + " characters.");
+            if (_db.Classes.Any(c => c.GradeName == gradeName && c.Section == section && c.Id != thisClassId))
+                return Error(409, gradeName + " - " + section + " already exists.");
+            return null;
+        }
 
         // The user must exist, be a teacher, and not already lead ANOTHER class
         private IActionResult? CheckClassTeacher(int teacherId, int? thisClassId)

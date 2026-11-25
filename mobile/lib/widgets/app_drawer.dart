@@ -1,14 +1,12 @@
 // lib/widgets/app_drawer.dart
 // The side menu. It shows different options for each role:
-//   Admin   : Users, Create Account, Manage Classes, Manage Students
+//   Admin   : Admin Panel (tabs: Users, Classes, Subjects), Manage Students
 //   Teacher : My Subjects, My Class + Manage Students (only if Class Teacher)
 //   VP      : School Overview
 // Everyone : Change Password, Logout
 
 import 'package:flutter/material.dart';
 
-import '../screens/admin/create_account_screen.dart';
-import '../screens/admin/manage_classes_screen.dart';
 import '../screens/auth/change_password_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/shared/class_tracker_screen.dart';
@@ -82,18 +80,12 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.home_outlined),
             title: Text(user.isAdmin
-                ? 'Users'
+                ? 'Admin Panel'
                 : user.isVp
                     ? 'School Overview'
                     : 'My Subjects'),
             onTap: () => Navigator.pop(context), // home is already open
           ),
-          if (user.isAdmin)
-            ListTile(
-              leading: const Icon(Icons.person_add_alt_1_outlined),
-              title: const Text('Create Account'),
-              onTap: () => _open(context, const CreateAccountScreen()),
-            ),
           if (user.isClassTeacher)
             ListTile(
               leading: const Icon(Icons.groups_outlined),
@@ -103,12 +95,6 @@ class AppDrawer extends StatelessWidget {
                 ClassTrackerScreen(
                     classId: user.classTeacherOfClassId!, isClassTeacher: true),
               ),
-            ),
-          if (user.isAdmin)
-            ListTile(
-              leading: const Icon(Icons.class_outlined),
-              title: const Text('Manage Classes'),
-              onTap: () => _open(context, const ManageClassesScreen()),
             ),
           // Only the Admin or a Class Teacher (for their own class) can add / delete students
           if (user.isAdmin || user.isClassTeacher)
