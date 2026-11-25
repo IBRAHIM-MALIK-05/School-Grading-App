@@ -33,6 +33,9 @@ A school result-management system: **Flutter app → ASP.NET Core Web API (.NET 
 
 Deleting a student removes them and all their marks from every subject of the class; the
 subject teachers then see *"… was removed by the Class Teacher of …"* on their marks screen.
+A sample printed result card is in `docs/samples/result_card_sample.pdf`
+(made by `flutter test test/report_card_pdf_test.dart`); screenshots of these features are
+`docs/screenshots/m7b_*.png` (`tools/screenshots/capture_m7b_features.py`).
 
 ## Run the API (local)
 1. Start **Apache + MySQL** in the XAMPP Control Panel (database `school_grading`).

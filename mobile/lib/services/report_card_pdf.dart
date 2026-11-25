@@ -120,6 +120,7 @@ Future<Uint8List> buildReportCardPdf(ReportCard card, PdfPageFormat format) asyn
           // ---------- Signatures ----------
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: pw.CrossAxisAlignment.start, // both lines at the same height
             children: [
               _signature('Class Teacher', card.classTeacherName),
               _signature('Principal', null),
