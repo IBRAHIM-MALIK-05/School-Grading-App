@@ -47,7 +47,7 @@ namespace SchoolGradingApi.Controllers
             return Ok(overview);
         }
 
-        // 7) GET /api/classes/{id}/tracker  -> which subject teachers have uploaded marks
+        // 7) GET /api/classes/{id}/tracker  -> which subjects are submitted + which result cards are ready
         [HttpGet("{id}/tracker")]
         public IActionResult GetTracker(int id)
         {
@@ -60,24 +60,58 @@ namespace SchoolGradingApi.Controllers
             if (!CanViewResults(me, schoolClass))
                 return Error(403, "Only the Class Teacher of " + DtoMapper.ClassName(schoolClass) + " can view this.");
 
-            int studentCount = schoolClass.Students.Count;
+            // Which (student, subject) pairs already have a mark - ONE query for the whole class
+            var marked = _db.Marks
+                .Where(m => m.Student!.ClassId == id)
+                .Select(m => new { m.StudentId, m.SubjectId })
+                .ToList()
+                .Select(m => (m.StudentId, m.SubjectId))
+                .ToHashSet();
+
+            var assignments = schoolClass.Assignments.OrderBy(a => a.SubjectId).ToList();
+            var students = schoolClass.Students.OrderBy(s => s.RollNo).ToList();
+            int studentCount = students.Count;
+
             var tracker = new TrackerDto
             {
                 SchoolClass = DtoMapper.ToSchoolClassDto(schoolClass),
-                Students = schoolClass.Students.OrderBy(s => s.RollNo).Select(s => DtoMapper.ToStudentDto(s)).ToList(),
-                Subjects = schoolClass.Assignments
-                    .OrderBy(a => a.SubjectId)
+                Students = students.Select(s => DtoMapper.ToStudentDto(s)).ToList(),
+                Subjects = assignments
                     .Select(a => new SubjectStatusDto
                     {
                         SubjectName = a.Subject!.Name,
                         MaxMarks = a.Subject.MaxMarks,
                         TeacherName = a.Teacher?.FullName ?? "-",
-                        EnteredCount = CountEnteredMarks(schoolClass.Id, a.SubjectId),
+                        EnteredCount = students.Count(s => marked.Contains((s.Id, a.SubjectId))),
                         StudentCount = studentCount,
                         SubmittedAt = a.SubmittedAt
                     })
                     .ToList()
             };
+
+            // Per student: ready, or exactly which subject (and teacher) the card is waiting for
+            foreach (var s in students)
+            {
+                var readiness = new StudentReadinessDto { StudentId = s.Id, FullName = s.FullName, RollNo = s.RollNo };
+                foreach (var a in assignments)
+                {
+                    string? reason = null;
+                    if (!marked.Contains((s.Id, a.SubjectId))) reason = "no mark entered yet";
+                    else if (a.SubmittedAt == null) reason = "not submitted yet";
+
+                    if (reason != null)
+                    {
+                        readiness.WaitingOn.Add(new WaitingOnDto
+                        {
+                            SubjectName = a.Subject!.Name,
+                            TeacherName = a.Teacher?.FullName ?? "-",
+                            Reason = reason
+                        });
+                    }
+                }
+                readiness.IsReady = assignments.Count > 0 && readiness.WaitingOn.Count == 0;
+                tracker.Readiness.Add(readiness);
+            }
             return Ok(tracker);
         }
 
@@ -118,6 +152,7 @@ namespace SchoolGradingApi.Controllers
         }
 
         // 9) GET /api/classes/{id}/students  -> students of one class (Manage Students screen)
+        //    Only the Class Teacher of this class or the Admin.
         [HttpGet("{id}/students")]
         public IActionResult GetStudents(int id)
         {
@@ -127,7 +162,7 @@ namespace SchoolGradingApi.Controllers
 
             var schoolClass = _db.Classes.Include(c => c.Students).FirstOrDefault(c => c.Id == id);
             if (schoolClass == null) return Error(404, "Class not found.");
-            if (!CanManageStudents(me, schoolClass)) return Error(403, "You can only manage students of your own classes.");
+            if (!CanManageStudents(me, schoolClass)) return OnlyClassTeacherOrAdmin(schoolClass);
 
             return Ok(new ClassStudentsDto
             {
@@ -139,6 +174,7 @@ namespace SchoolGradingApi.Controllers
         }
 
         // 10) POST /api/classes/{id}/students  -> add a student to a class
+        //     Only the Class Teacher of this class or the Admin.
         [HttpPost("{id}/students")]
         public IActionResult AddStudent(int id, AddStudentDto dto)
         {
@@ -148,20 +184,21 @@ namespace SchoolGradingApi.Controllers
 
             var schoolClass = _db.Classes.FirstOrDefault(c => c.Id == id);
             if (schoolClass == null) return Error(404, "Class not found.");
-            if (!CanManageStudents(me, schoolClass)) return Error(403, "You can only manage students of your own classes.");
+            if (!CanManageStudents(me, schoolClass)) return OnlyClassTeacherOrAdmin(schoolClass);
 
             var fullName = (dto.FullName ?? "").Trim();
             var rollNo = (dto.RollNo ?? "").Trim();
             if (fullName == "" || rollNo == "") return Error(400, "Name and roll number are required.");
             if (fullName.Length > AddStudentDto.MaxNameLength)
                 return Error(400, "Name can be at most " + AddStudentDto.MaxNameLength + " characters.");
+            // Check the length of what was TYPED, before "00000000089" is shortened to "89"
+            if (rollNo.Length > AddStudentDto.MaxRollNoLength)
+                return Error(400, "Roll number can be at most " + AddStudentDto.MaxRollNoLength + " characters.");
             if (int.TryParse(rollNo, out int number))
             {
                 if (number < 0) return Error(400, "Roll number cannot be negative.");
                 rollNo = number.ToString("00");   // 7 -> "07"
             }
-            if (rollNo.Length > AddStudentDto.MaxRollNoLength)
-                return Error(400, "Roll number can be at most " + AddStudentDto.MaxRollNoLength + " characters.");
 
             if (schoolClass.ResultsPublishedAt != null)
                 return Error(409, "Results of " + DtoMapper.ClassName(schoolClass) + " are published. Unpublish first.");
@@ -180,6 +217,146 @@ namespace SchoolGradingApi.Controllers
             _db.SaveChanges();
 
             return StatusCode(201, DtoMapper.ToStudentDto(student));
+        }
+
+        // 16) POST /api/classes  -> Admin creates a new class (+ optional Class Teacher and subject teachers)
+        [HttpPost]
+        public IActionResult CreateClass(CreateClassDto dto)
+        {
+            var me = GetCurrentUser();
+            if (me == null) return NotLoggedIn();
+            if (me.MustChangePassword) return MustChangePasswordFirst();
+            if (me.Role != "admin") return Error(403, "Only the Admin can create classes.");
+
+            var gradeName = (dto.GradeName ?? "").Trim();
+            var section = (dto.Section ?? "").Trim().ToUpperInvariant();
+            if (gradeName == "" || section == "")
+                return Error(400, "Class name and section are required (e.g. \"Class 10\" and \"A\").");
+            if (gradeName.Length > CreateClassDto.MaxGradeNameLength)
+                return Error(400, "Class name can be at most " + CreateClassDto.MaxGradeNameLength + " characters.");
+            if (section.Length > CreateClassDto.MaxSectionLength)
+                return Error(400, "Section can be at most " + CreateClassDto.MaxSectionLength + " characters.");
+            if (_db.Classes.Any(c => c.GradeName == gradeName && c.Section == section))
+                return Error(409, gradeName + " - " + section + " already exists.");
+
+            var schoolClass = new SchoolClass { GradeName = gradeName, Section = section };
+
+            if (dto.ClassTeacherId != null)
+            {
+                var problem = CheckClassTeacher(dto.ClassTeacherId.Value, null);
+                if (problem != null) return problem;
+                schoolClass.ClassTeacherId = dto.ClassTeacherId;
+            }
+
+            var subjectTeachers = (dto.SubjectTeachers ?? new List<SubjectTeacherDto>())
+                .Where(st => st.TeacherId != null).ToList();
+            var subjectProblem = CheckSubjectTeachers(subjectTeachers);
+            if (subjectProblem != null) return subjectProblem;
+
+            foreach (var st in subjectTeachers)
+            {
+                schoolClass.Assignments.Add(new TeachingAssignment { SubjectId = st.SubjectId, TeacherId = st.TeacherId!.Value });
+            }
+
+            _db.Classes.Add(schoolClass);
+            _db.SaveChanges();   // class + its subject teachers in one transaction
+
+            var created = ClassesWithDetails().First(c => c.Id == schoolClass.Id);
+            return StatusCode(201, DtoMapper.ToSchoolClassDto(created));
+        }
+
+        // 17) PUT /api/classes/{id}/assignments  -> Admin changes the Class Teacher and/or subject teachers
+        [HttpPut("{id}/assignments")]
+        public IActionResult UpdateTeachers(int id, ClassTeachersDto dto)
+        {
+            var me = GetCurrentUser();
+            if (me == null) return NotLoggedIn();
+            if (me.MustChangePassword) return MustChangePasswordFirst();
+            if (me.Role != "admin") return Error(403, "Only the Admin can assign teachers to a class.");
+
+            var schoolClass = ClassesWithDetails().FirstOrDefault(c => c.Id == id);
+            if (schoolClass == null) return Error(404, "Class not found.");
+            string className = DtoMapper.ClassName(schoolClass);
+            bool isPublished = schoolClass.ResultsPublishedAt != null;
+
+            // ----- Class Teacher -----
+            if (dto.ClassTeacherId != schoolClass.ClassTeacherId)
+            {
+                if (dto.ClassTeacherId != null)
+                {
+                    var problem = CheckClassTeacher(dto.ClassTeacherId.Value, schoolClass.Id);
+                    if (problem != null) return problem;
+                }
+                schoolClass.ClassTeacherId = dto.ClassTeacherId;
+            }
+
+            // ----- Subject teachers -----
+            var changes = dto.SubjectTeachers ?? new List<SubjectTeacherDto>();
+            var subjectProblem = CheckSubjectTeachers(changes);
+            if (subjectProblem != null) return subjectProblem;
+
+            foreach (var change in changes)
+            {
+                var existing = schoolClass.Assignments.FirstOrDefault(a => a.SubjectId == change.SubjectId);
+                var subjectName = _db.Subjects.Where(s => s.Id == change.SubjectId).Select(s => s.Name).First();
+
+                if (change.TeacherId == null)
+                {
+                    if (existing == null) continue;   // not taught in this class anyway
+                    if (isPublished)
+                        return Error(409, "Results of " + className + " are published. Unpublish first to remove a subject.");
+                    if (CountEnteredMarks(schoolClass.Id, change.SubjectId) > 0)
+                        return Error(409, subjectName + " already has marks in " + className + ", so it cannot be removed.");
+                    _db.TeachingAssignments.Remove(existing);
+                }
+                else if (existing == null)
+                {
+                    if (isPublished)
+                        return Error(409, "Results of " + className + " are published. Unpublish first to add a subject.");
+                    _db.TeachingAssignments.Add(new TeachingAssignment
+                    {
+                        ClassId = schoolClass.Id, SubjectId = change.SubjectId, TeacherId = change.TeacherId.Value
+                    });
+                }
+                else
+                {
+                    existing.TeacherId = change.TeacherId.Value;   // marks + submitted status are kept
+                }
+            }
+            _db.SaveChanges();   // everything in one transaction
+
+            var updated = ClassesWithDetails().First(c => c.Id == id);
+            return Ok(DtoMapper.ToSchoolClassDto(updated));
+        }
+
+        // ----- helpers for create / update -----
+
+        // The user must exist, be a teacher, and not already lead ANOTHER class
+        private IActionResult? CheckClassTeacher(int teacherId, int? thisClassId)
+        {
+            var teacher = _db.Users.FirstOrDefault(u => u.Id == teacherId);
+            if (teacher == null || teacher.Role != "teacher")
+                return Error(400, "The Class Teacher must be a teacher account.");
+            var otherClass = _db.Classes.FirstOrDefault(c => c.ClassTeacherId == teacherId && c.Id != thisClassId);
+            if (otherClass != null)
+                return Error(409, teacher.FullName + " is already the Class Teacher of " + DtoMapper.ClassName(otherClass) + ".");
+            return null;
+        }
+
+        // Every subject must exist (once), every teacher must be a teacher account
+        private IActionResult? CheckSubjectTeachers(List<SubjectTeacherDto> subjectTeachers)
+        {
+            if (subjectTeachers.Select(st => st.SubjectId).Distinct().Count() != subjectTeachers.Count)
+                return Error(400, "Each subject can be listed only once.");
+
+            var subjectIds = subjectTeachers.Select(st => st.SubjectId).ToList();
+            if (_db.Subjects.Count(s => subjectIds.Contains(s.Id)) != subjectIds.Count)
+                return Error(400, "One or more subjects do not exist.");
+
+            var teacherIds = subjectTeachers.Where(st => st.TeacherId != null).Select(st => st.TeacherId!.Value).Distinct().ToList();
+            if (_db.Users.Count(u => teacherIds.Contains(u.Id) && u.Role == "teacher") != teacherIds.Count)
+                return Error(400, "Every subject teacher must be a teacher account.");
+            return null;
         }
     }
 }

@@ -22,6 +22,7 @@ class ReportLine {
 
 class ReportCard {
   final String schoolName;
+  final int classId;
   final String studentName;
   final String rollNo;
   final String className;
@@ -33,9 +34,11 @@ class ReportCard {
   final String? grade; // null while incomplete
   final bool isComplete; // every subject has a mark
   final bool isPublished; // class results published by the Class Teacher
+  final bool canPrint; // only the Class Teacher of this class may print / save PDF
 
   const ReportCard({
     required this.schoolName,
+    required this.classId,
     required this.studentName,
     required this.rollNo,
     required this.className,
@@ -47,10 +50,12 @@ class ReportCard {
     this.grade,
     required this.isComplete,
     required this.isPublished,
+    this.canPrint = false,
   });
 
   factory ReportCard.fromJson(Map<String, dynamic> json) => ReportCard(
         schoolName: json['schoolName'],
+        classId: json['classId'],
         studentName: json['studentName'],
         rollNo: json['rollNo'],
         className: json['className'],
@@ -63,6 +68,7 @@ class ReportCard {
         grade: json['grade'],
         isComplete: json['isComplete'],
         isPublished: json['isPublished'],
+        canPrint: json['canPrint'] ?? false,
       );
 
   int get pendingSubjects => lines.where((l) => l.obtained == null).length;

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "School Grading API",
-    "description": "Tests for the School Grading ASP.NET Core Web API.\n\n1. Select an environment (**School Grading - Local** or **- Azure**).\n2. Run the whole collection (Run collection) - the folders are in order.\nLogin requests save JWT tokens into collection variables automatically.\nThe collection puts the data back the way it was (deletes the student it adds, unpublishes 9-A).",
+    "description": "Tests for the School Grading ASP.NET Core Web API.\n\n1. Select an environment (**School Grading - Local** or **- Azure**).\n2. Run the whole collection (Run collection) - the folders are in order.\nLogin requests save JWT tokens into collection variables automatically.\nThe collection puts the data back the way it was (deletes the student it adds, unpublishes 9-A).\nEach run adds one teacher account and one class (Class 10 - T<random>); reset with tools/azure/import_to_azure.py --reset (Azure) or the local reset steps.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -279,7 +279,7 @@
                 "exec": [
                   "pm.test(\"Status is 201 Created\", () => pm.response.to.have.status(201));",
                   "const json = pm.response.json();",
-                  "pm.test(\"Login ID is generated (\u2026@school.com)\", () => pm.expect(json.loginId).to.match(/^ali\\d*@school\\.com$/));",
+                  "pm.test(\"Login ID is generated (…@school.com)\", () => pm.expect(json.loginId).to.match(/^ali\\d*@school\\.com$/));",
                   "pm.test(\"Temporary password has 10 characters\", () => pm.expect(json.temporaryPassword).to.have.lengthOf(10));",
                   "pm.collectionVariables.set(\"newLoginId\", json.loginId);",
                   "pm.collectionVariables.set(\"newTempPassword\", json.temporaryPassword);"
@@ -1244,6 +1244,53 @@
           }
         },
         {
+          "name": "Tracker 8-B - result card readiness per student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const t = pm.response.json();",
+                  "pm.test(\"One readiness line per student\", () => pm.expect(t.readiness).to.have.lengthOf(t.students.length));",
+                  "pm.test(\"A waiting card names the subject AND the teacher\", () => t.readiness.filter(r => !r.isReady).forEach(r => {",
+                  "  pm.expect(r.waitingOn.length).to.be.above(0);",
+                  "  r.waitingOn.forEach(w => { pm.expect(w.subjectName).to.be.a(\"string\"); pm.expect(w.teacherName).to.be.a(\"string\"); pm.expect(w.reason).to.be.a(\"string\"); });",
+                  "}));",
+                  "pm.test(\"A ready card waits for nothing\", () => t.readiness.filter(r => r.isReady).forEach(r => pm.expect(r.waitingOn).to.have.lengthOf(0)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/2/tracker",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "2",
+                "tracker"
+              ]
+            },
+            "description": "Each student: Ready, or exactly which subject + teacher the result card is waiting for."
+          }
+        },
+        {
           "name": "Tracker 9-A - not her class",
           "event": [
             {
@@ -1579,6 +1626,211 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"fullName\": \"\",\n  \"rollNo\": \"07\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Add student - 11-character numeric roll (00000000089)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Message says roll number is too long\", () => pm.expect(pm.response.json().message).to.include(\"at most 10\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/2/students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "2",
+                "students"
+              ]
+            },
+            "description": "The length is checked on what was typed, before 00000000089 would be shortened to 89.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Long Roll\",\n  \"rollNo\": \"00000000089\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Add student - negative roll number",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Message says roll number cannot be negative\", () => pm.expect(pm.response.json().message).to.include(\"negative\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/2/students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "2",
+                "students"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Minus Roll\",\n  \"rollNo\": \"-3\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Students of 8-A - Subject Teacher (not allowed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Only the Class Teacher or Admin\", () => pm.expect(pm.response.json().message).to.include(\"Only the Class Teacher of Class 8 - A\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/1/students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "1",
+                "students"
+              ]
+            },
+            "description": "Sania teaches Chemistry in 8-A but is NOT its Class Teacher."
+          }
+        },
+        {
+          "name": "Add student to 8-A - Subject Teacher (not allowed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/1/students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "1",
+                "students"
+              ]
+            },
+            "description": "Only the Class Teacher of 8-A (Ahsan) or the Admin may add students to 8-A.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Should Not Be Added\",\n  \"rollNo\": \"40\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2018,7 +2270,8 @@
                   "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
                   "const card = pm.response.json();",
                   "pm.test(\"Complete card has a percentage and a grade\", () => { pm.expect(card.isComplete).to.be.true; pm.expect(card.grade).to.be.a(\"string\"); });",
-                  "pm.test(\"Total is out of 380\", () => pm.expect(card.totalMax).to.eql(380));"
+                  "pm.test(\"Total is out of 380\", () => pm.expect(card.totalMax).to.eql(380));",
+                  "pm.test(\"Class Teacher of 8-B may print / save PDF\", () => pm.expect(card.canPrint).to.be.true);"
                 ]
               }
             }
@@ -2060,7 +2313,8 @@
                 "exec": [
                   "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
                   "const card = pm.response.json();",
-                  "pm.test(\"Incomplete card has no grade yet\", () => { pm.expect(card.isComplete).to.be.false; pm.expect(card.grade).to.be.null; });"
+                  "pm.test(\"Incomplete card has no grade yet\", () => { pm.expect(card.isComplete).to.be.false; pm.expect(card.grade).to.be.null; });",
+                  "pm.test(\"Principal/VP can view but not print\", () => pm.expect(pm.response.json().canPrint).to.be.false);"
                 ]
               }
             }
@@ -2133,6 +2387,45 @@
           }
         },
         {
+          "name": "Delete student in 8-A - Subject Teacher (not allowed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/students/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                "1"
+              ]
+            },
+            "description": "Ali is in 8-A; Sania only teaches a subject there."
+          }
+        },
+        {
           "name": "Delete student - the one added earlier",
           "event": [
             {
@@ -2141,7 +2434,9 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"Error message mentions \\\"deleted\\\"\", () => pm.expect(pm.response.json().message).to.include(\"deleted\"));"
+                  "const d = pm.response.json();",
+                  "pm.test(\"Message names the class and the Class Teacher\", () => pm.expect(d.message).to.include(\"was deleted from Class 8 - B by the Class Teacher\"));",
+                  "pm.test(\"Says the student is removed from all subjects\", () => pm.expect(d.message).to.include(\"removed from all subjects\"));"
                 ]
               }
             }
@@ -2167,6 +2462,53 @@
               "path": [
                 "students",
                 "{{newStudentId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Marks of 8-B Chemistry - removal notice for subject teachers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const m = pm.response.json();",
+                  "pm.test(\"Deleted student is gone from the marks list\", () => pm.expect(m.rows.map(r => r.studentName)).to.not.include(\"Hamza Ali\"));",
+                  "pm.test(\"Notice says the Class Teacher removed the student\", () => {",
+                  "  const n = m.removedStudents.find(r => r.studentName === \"Hamza Ali\");",
+                  "  pm.expect(n, \"notice\").to.exist;",
+                  "  pm.expect(n.message).to.include(\"removed by the Class Teacher of Class 8 - B\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assignments/{{chem8bId}}/marks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assignments",
+                "{{chem8bId}}",
+                "marks"
               ]
             },
             "description": ""
@@ -2531,6 +2873,600 @@
           }
         }
       ]
+    },
+    {
+      "name": "8. Admin - classes & teachers",
+      "description": "Admin creates a class and assigns its Class Teacher / subject teachers. Each run creates one new class with a random section (e.g. Class 10 - T4821).",
+      "item": [
+        {
+          "name": "Subjects - list (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"5 subjects\", () => pm.expect(pm.response.json()).to.have.lengthOf(5));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/subjects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subjects"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Create class - by a Teacher (not allowed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gradeName\": \"Class 10\",\n  \"section\": \"X\",\n  \"classTeacherId\": null,\n  \"subjectTeachers\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create class - Admin (Class 10 + subject teachers)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// a new section every run (max 5 characters), so the collection can be run again",
+                  "pm.collectionVariables.set(\"newSection\", \"T\" + Math.floor(1000 + Math.random() * 9000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201 Created\", () => pm.response.to.have.status(201));",
+                  "const k = pm.response.json();",
+                  "pm.test(\"Class name and section saved\", () => { pm.expect(k.gradeName).to.eql(\"Class 10\"); pm.expect(k.section).to.eql(pm.collectionVariables.get(\"newSection\")); });",
+                  "pm.test(\"English -> Ahsan, Chemistry -> Sania\", () => {",
+                  "  pm.expect(k.subjects).to.have.lengthOf(2);",
+                  "  pm.expect(k.subjects.find(s => s.subjectId === 1).teacherName).to.eql(\"Teacher Ahsan\");",
+                  "  pm.expect(k.subjects.find(s => s.subjectId === 4).teacherName).to.eql(\"Teacher Sania\");",
+                  "});",
+                  "pm.test(\"No Class Teacher yet\", () => pm.expect(k.classTeacherId).to.be.null);",
+                  "pm.collectionVariables.set(\"newClassId\", k.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gradeName\": \"Class 10\",\n  \"section\": \"{{newSection}}\",\n  \"classTeacherId\": null,\n  \"subjectTeachers\": [\n    { \"subjectId\": 1, \"teacherId\": 4 },\n    { \"subjectId\": 4, \"teacherId\": 3 }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create class - duplicate name (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Message says it already exists\", () => pm.expect(pm.response.json().message).to.include(\"already exists\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gradeName\": \"Class 10\",\n  \"section\": \"{{newSection}}\",\n  \"classTeacherId\": null,\n  \"subjectTeachers\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create class - section missing (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400 Bad Request\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gradeName\": \"Class 10\",\n  \"section\": \"\",\n  \"classTeacherId\": null,\n  \"subjectTeachers\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create class - teacher already leads another class (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Says Sania already leads 8-B\", () => pm.expect(pm.response.json().message).to.include(\"already the Class Teacher of Class 8 - B\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gradeName\": \"Class 10\",\n  \"section\": \"Y\",\n  \"classTeacherId\": 3,\n  \"subjectTeachers\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Assign teachers - Admin (Class Teacher + change subjects)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const k = pm.response.json();",
+                  "pm.test(\"New teacher is now the Class Teacher\", () => pm.expect(k.classTeacherId).to.eql(Number(pm.collectionVariables.get(\"newUserId\"))));",
+                  "pm.test(\"Maths added (Maryam), Chemistry removed\", () => {",
+                  "  pm.expect(k.subjects.map(s => s.subjectName)).to.have.members([\"English\", \"Mathematics\"]);",
+                  "  pm.expect(k.subjects.find(s => s.subjectId === 2).teacherName).to.eql(\"Teacher Maryam\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/{{newClassId}}/assignments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "{{newClassId}}",
+                "assignments"
+              ]
+            },
+            "description": "The teacher created in folder 2 becomes Class Teacher of the new class.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classTeacherId\": {{newUserId}},\n  \"subjectTeachers\": [\n    { \"subjectId\": 2, \"teacherId\": 5 },\n    { \"subjectId\": 4, \"teacherId\": null }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Assign teachers - by a Teacher (not allowed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/{{newClassId}}/assignments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "{{newClassId}}",
+                "assignments"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classTeacherId\": 3,\n  \"subjectTeachers\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Assign teachers - class not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/99999/assignments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "99999",
+                "assignments"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classTeacherId\": null,\n  \"subjectTeachers\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Assign teachers - remove a subject that has marks (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Says the subject already has marks\", () => pm.expect(pm.response.json().message).to.include(\"already has marks\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/2/assignments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "2",
+                "assignments"
+              ]
+            },
+            "description": "English already has marks in 8-B, so it cannot be removed. Nothing is changed.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classTeacherId\": 3,\n  \"subjectTeachers\": [\n    { \"subjectId\": 1, \"teacherId\": null }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Tracker 8-B - unchanged after the refused change",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const t = pm.response.json();",
+                  "pm.test(\"Sania is still Class Teacher and English is still taught\", () => {",
+                  "  pm.expect(t.schoolClass.classTeacherName).to.eql(\"Teacher Sania\");",
+                  "  pm.expect(t.subjects.map(s => s.subjectName)).to.include(\"English\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/2/tracker",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "2",
+                "tracker"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
     }
   ],
   "variable": [
@@ -2580,6 +3516,14 @@
     },
     {
       "key": "marksBody",
+      "value": ""
+    },
+    {
+      "key": "newClassId",
+      "value": ""
+    },
+    {
+      "key": "newSection",
       "value": ""
     }
   ]

@@ -2,14 +2,14 @@
 
 | File | What it is |
 |---|---|
-| `SchoolGrading.postman_collection.json` | 52 requests in 7 folders, each with test scripts (113 checks in total) |
+| `SchoolGrading.postman_collection.json` | 70 requests in 8 folders, each with test scripts (152 checks in total) |
 | `SchoolGrading_Local.postman_environment.json` | `baseUrl = http://localhost:5080/api` |
 | `SchoolGrading_Azure.postman_environment.json` | `baseUrl = https://school-grading-api-bcgi.azurewebsites.net/api` (live cloud API) |
 | `run_tests_local.cmd` | Runs the whole collection with **Newman** against the local API and writes the HTML report |
 | `run_tests_azure.cmd` | The same against **Azure** (wakes up the free F1 server first) |
 | `reports/local_test_report.html` | Latest HTML report (open in a browser) |
 | `reports/local_cli_output.txt` | The same run as plain text |
-| `reports/azure_test_report.html`, `reports/azure_cli_output.txt` | Latest run against Azure (52 requests, 113 tests, 0 failures) |
+| `reports/azure_test_report.html`, `reports/azure_cli_output.txt` | Latest run against Azure (70 requests, 152 tests, 0 failures) |
 
 ## Run in the Postman app
 1. Postman → **Import** → select both JSON files.
@@ -32,18 +32,26 @@ Node.js in `tools/node` and Newman in `tools/postman-runner` – nothing is inst
    the temporary password; weak / wrong passwords → 400.
 3. **Users & password reset:** only Admin lists users; reset gives a new temporary
    password and the old one stops working (401).
-4. **Classes, tracker & students:** overview, live submission tracker, publish blocked while
-   subjects are pending (409), add student (201) / duplicates (409) / empty name (400);
-   adding a student clears the submissions.
+4. **Classes, tracker & students:** overview, live submission tracker + per-student result-card
+   readiness (which subject / teacher a card waits for), publish blocked while subjects are
+   pending (409), add student (201) / duplicates (409) / empty name, 11-character roll
+   `00000000089` or negative roll (400); a **subject teacher** who is not the Class Teacher
+   cannot list or add students of that class (403); adding a student clears the submissions.
 5. **Marks:** a teacher's subjects; marks above the maximum (400); submit with a missing
    mark (400); full submit (200); another teacher's subject (403).
-6. **Result cards & delete student:** complete vs incomplete result card; delete (200/404).
+6. **Result cards & delete student:** complete vs incomplete result card; only the Class Teacher
+   gets `canPrint` (VP: view only); a subject teacher cannot delete (403); the Class Teacher's
+   delete removes the student from all subjects and the subject teachers see a removal notice.
 7. **Publish & lock:** Class Teacher publishes 9-A; adding students / saving marks in a
    locked class → 409; only the Class Teacher may publish (403); unpublish again.
+8. **Admin – classes & teachers:** list subjects; create a class with subject teachers (201);
+   duplicate name / teacher already leading another class (409); missing section (400);
+   teacher not allowed (403); change the Class Teacher and subject teachers (200); removing a
+   subject that already has marks is refused (409) and nothing changes.
 
 The collection cleans up after itself (deletes the student it adds, unpublishes 9-A),
 so it can be run again and again. Each run adds one new teacher account (`ali@school.com`,
-`ali2@school.com`, …).
+`ali2@school.com`, …) and one new class (`Class 10 - T<random>`).
 
 
 ## Against Azure

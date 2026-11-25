@@ -14,26 +14,40 @@ class StatusChip extends StatelessWidget {
 
   const StatusChip({super.key, required this.label, required this.color, this.icon});
 
-  // For one subject of one class
+  // For one subject of one class, as the SUBJECT TEACHER sees it (plain words, no "draft")
   factory StatusChip.submission(SubmissionState state,
       {int entered = 0, int total = 0}) {
     switch (state) {
       case SubmissionState.submitted:
         return const StatusChip(
-            label: 'Submitted', color: AppColors.success, icon: Icons.check_circle);
+            label: 'Final Submitted', color: AppColors.success, icon: Icons.lock);
       case SubmissionState.inProgress:
-        return StatusChip(
-            // everyone has marks but the teacher has not pressed Submit yet
-            label: entered == total && total > 0
-                ? 'Awaiting submit'
-                : 'In progress $entered/$total',
+        return const StatusChip(
+            label: 'Saved — Not Submitted Yet',
             color: AppColors.warning,
-            icon: Icons.timelapse);
+            icon: Icons.save_outlined);
       case SubmissionState.notUploaded:
         return const StatusChip(
-            label: 'Not uploaded', color: AppColors.danger, icon: Icons.cancel);
+            label: 'Not started', color: AppColors.danger, icon: Icons.radio_button_unchecked);
     }
   }
+
+  // The same subject as the CLASS TEACHER sees it: simply Submitted or Pending
+  factory StatusChip.classTeacherView(SubmissionState state) {
+    if (state == SubmissionState.submitted) {
+      return const StatusChip(
+          label: 'Submitted', color: AppColors.success, icon: Icons.check_circle);
+    }
+    return StatusChip(
+        label: 'Pending',
+        color: state == SubmissionState.notUploaded ? AppColors.danger : AppColors.warning,
+        icon: Icons.hourglass_bottom);
+  }
+
+  // One student's result card: Ready or Waiting
+  factory StatusChip.cardReady(bool isReady) => isReady
+      ? const StatusChip(label: 'Ready', color: AppColors.success, icon: Icons.check_circle)
+      : const StatusChip(label: 'Waiting', color: AppColors.warning, icon: Icons.schedule);
 
   // For a whole class: "Published", "Ready to publish", "Pending"
   factory StatusChip.classStatus(String statusLabel) {

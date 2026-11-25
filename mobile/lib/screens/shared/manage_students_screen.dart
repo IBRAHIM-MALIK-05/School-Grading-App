@@ -1,7 +1,11 @@
 // lib/screens/shared/manage_students_screen.dart
-// Opened from the side menu ("Manage Students") by Admin and Teachers.
-//  - Admin: every class.  Teacher: classes they teach or are Class Teacher of.
-//  - Add a student (name + roll number) and delete with a confirmation popup.
+// Opened from the side menu ("Manage Students") by the Admin and Class Teachers.
+//  - Admin: every class.  Class Teacher: ONLY their own class.
+//    (Subject teachers do not get this screen; the API answers them 403.)
+//  - Add a student (name + roll number) or delete one (with a clear confirmation).
+//    There is no "edit student": a wrong entry is deleted and added again.
+//  - Deleting removes the student AND all their marks from every subject of the class;
+//    the subject teachers then see a notice on their marks screen.
 //  - Blocked while the class results are published (locked).
 //  - Adding a student makes that class's subjects "not submitted" again,
 //    because the new student has no marks yet.
@@ -49,14 +53,9 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
         for (final c in overview.classes) {
           options[c.id] = c.name;
         }
-      } else {
-        if (user.isClassTeacher) {
-          options[user.classTeacherOfClassId!] = user.classTeacherOfClassName!;
-        }
-        final assignments = await dataService.getMyAssignments();
-        for (final a in assignments) {
-          options[a.classId] = a.className;
-        }
+      } else if (user.isClassTeacher) {
+        // A Class Teacher manages ONLY their own class (not classes they just teach a subject in)
+        options[user.classTeacherOfClassId!] = user.classTeacherOfClassName!;
       }
       final sortedIds = options.keys.toList()..sort();
       if (!mounted) return; // screen closed while loading
@@ -102,23 +101,25 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
     }
   }
 
-  Future<void> _deleteStudent(Student student) async {
+  Future<void> _deleteStudent(Student student, String className) async {
     final ok = await confirmDialog(
       context,
-      title: 'Delete student?',
-      message: 'Delete ${student.fullName} (roll ${student.rollNo})?\n\n'
-          'All of this student\'s marks in every subject will also be deleted. '
-          'This cannot be undone.',
-      confirmText: 'Delete',
+      title: 'Delete ${student.fullName}?',
+      message: 'Deleting ${student.fullName} (roll ${student.rollNo}) removes this student '
+          'and their marks from ALL subjects in $className.\n\n'
+          'Every subject teacher of $className will see a notice that the student was '
+          'removed by the Class Teacher. This cannot be undone.',
+      confirmText: 'Delete from all subjects',
       isDanger: true,
     );
     if (!ok) return;
 
     setState(() => _isWorking = true);
     try {
-      await dataService.deleteStudent(student.id);
+      // e.g. "Ali was deleted from Class 8 - B by the Class Teacher (removed from all subjects)."
+      final message = await dataService.deleteStudent(student.id);
       if (!mounted) return;
-      showMessage(context, '${student.fullName} deleted.');
+      showMessage(context, message);
       _reloadStudents();
     } catch (e) {
       if (mounted) showMessage(context, errorText(e), isError: true);
@@ -162,7 +163,9 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
     }
     if (_classOptions == null) return const LoadingView();
     if (_classOptions!.isEmpty) {
-      return const EmptyView(message: 'You have no classes to manage yet.');
+      return const EmptyView(
+          message: 'Only a Class Teacher (for their own class) or the Admin can add '
+              'or delete students.');
     }
 
     return Column(
@@ -237,7 +240,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                   tooltip: 'Delete student',
                   onPressed: (data.isPublished || _isWorking)
                       ? null
-                      : () => _deleteStudent(student),
+                      : () => _deleteStudent(student, data.className),
                 ),
               ),
             ),
@@ -280,6 +283,7 @@ class _AddStudentDialogState extends State<_AddStudentDialog> {
             TextFormField(
               controller: _nameController,
               autofocus: true,
+              maxLength: 100, // same limit as the database
               decoration: const InputDecoration(labelText: 'Student name'),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Name is required' : null,
@@ -287,6 +291,7 @@ class _AddStudentDialogState extends State<_AddStudentDialog> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _rollController,
+              maxLength: 10, // same limit as the database
               decoration: const InputDecoration(
                   labelText: 'Roll number', hintText: 'e.g. 06'),
               validator: (v) =>

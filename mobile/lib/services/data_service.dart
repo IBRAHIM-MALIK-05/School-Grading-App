@@ -33,10 +33,16 @@ abstract class DataService {
   Future<ClassTracker> getClassTracker(int classId); // GET /api/classes/{id}/tracker
   Future<void> setPublished(int classId, bool publish); // PUT /api/classes/{id}/publish
   Future<ClassStudents> getClassStudents(int classId); // GET /api/classes/{id}/students
+  Future<List<SubjectInfo>> getSubjects(); // GET /api/subjects (Admin)
+  Future<SchoolClass> createClass(String gradeName, String section,
+      ClassTeachersRequest teachers); // POST /api/classes (Admin)
+  Future<SchoolClass> updateClassTeachers(
+      int classId, ClassTeachersRequest teachers); // PUT /api/classes/{id}/assignments (Admin)
 
   // ---------- Students ----------
   Future<Student> addStudent(int classId, String fullName, String rollNo); // POST /api/classes/{id}/students
-  Future<void> deleteStudent(int studentId); // DELETE /api/students/{id}
+  // Returns the server's message, e.g. "Ali was deleted from Class 8 - B by the Class Teacher ..."
+  Future<String> deleteStudent(int studentId); // DELETE /api/students/{id}
   Future<ReportCard> getReportCard(int studentId); // GET /api/students/{id}/report-card
 
   // ---------- Marks ----------

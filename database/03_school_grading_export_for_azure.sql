@@ -282,6 +282,28 @@ INSERT INTO `users` (`Id`, `FullName`, `LoginId`, `ContactEmail`, `PasswordHash`
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `student_removals`
+-- (added later with the EF migration AddStudentRemovals - same table as in XAMPP,
+--  see database/04_add_student_removals_generated_by_ef.sql)
+--
+
+DROP TABLE IF EXISTS `student_removals`;
+CREATE TABLE IF NOT EXISTS `student_removals` (
+  `Id` int(11) NOT NULL AUTO_INCREMENT,
+  `ClassId` int(11) NOT NULL,
+  `StudentName` varchar(100) NOT NULL,
+  `RollNo` varchar(10) NOT NULL,
+  `RemovedById` int(11) NOT NULL,
+  `RemovedByRole` varchar(20) NOT NULL,
+  `RemovedAt` datetime(6) NOT NULL,
+  PRIMARY KEY (`Id`),
+  KEY `IX_student_removals_ClassId` (`ClassId`),
+  KEY `IX_student_removals_RemovedById` (`RemovedById`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `__efmigrationshistory`
 --
 
@@ -297,7 +319,8 @@ CREATE TABLE IF NOT EXISTS `__efmigrationshistory` (
 --
 
 INSERT INTO `__efmigrationshistory` (`MigrationId`, `ProductVersion`) VALUES
-('20261124031825_InitialCreate', '10.0.12');
+('20261124031825_InitialCreate', '10.0.12'),
+('20261125192922_AddStudentRemovals', '10.0.12');
 
 --
 -- Constraints for dumped tables
@@ -322,6 +345,13 @@ ALTER TABLE `marks`
 --
 ALTER TABLE `students`
   ADD CONSTRAINT `FK_students_classes_ClassId` FOREIGN KEY (`ClassId`) REFERENCES `classes` (`Id`);
+
+--
+-- Constraints for table `student_removals`
+--
+ALTER TABLE `student_removals`
+  ADD CONSTRAINT `FK_student_removals_classes_ClassId` FOREIGN KEY (`ClassId`) REFERENCES `classes` (`Id`),
+  ADD CONSTRAINT `FK_student_removals_users_RemovedById` FOREIGN KEY (`RemovedById`) REFERENCES `users` (`Id`);
 
 --
 -- Constraints for table `teaching_assignments`

@@ -28,7 +28,7 @@ CONFIG = Path(__file__).with_name("azure_mysql.local.json")
 EXPORT_FILE = ROOT / "database" / "03_school_grading_export_for_azure.sql"
 OUT = ROOT / "docs" / "screenshots"
 DB = "school_grading"
-TABLES = ["users", "subjects", "classes", "students", "teaching_assignments", "marks"]
+TABLES = ["users", "subjects", "classes", "students", "teaching_assignments", "marks", "student_removals"]
 
 
 def load_config():

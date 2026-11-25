@@ -6,23 +6,29 @@ import 'json_helpers.dart';
 
 class ClassSubject {
   final int assignmentId; // the row that links class + subject + teacher
+  final int subjectId; // used by Admin > Manage Classes
   final String subjectName;
   final int maxMarks;
+  final int? teacherId; // used by Admin > Manage Classes
   final String? teacherName;
   final bool isSubmitted;
 
   const ClassSubject({
     required this.assignmentId,
+    required this.subjectId,
     required this.subjectName,
     required this.maxMarks,
+    this.teacherId,
     this.teacherName,
     required this.isSubmitted,
   });
 
   factory ClassSubject.fromJson(Map<String, dynamic> json) => ClassSubject(
         assignmentId: json['assignmentId'],
+        subjectId: json['subjectId'],
         subjectName: json['subjectName'],
         maxMarks: json['maxMarks'],
+        teacherId: json['teacherId'],
         teacherName: json['teacherName'],
         isSubmitted: json['isSubmitted'],
       );
@@ -101,4 +107,29 @@ class SchoolOverview {
         pendingSubjects: json['pendingSubjects'],
         classes: listFromJson(json['classes'], SchoolClass.fromJson),
       );
+}
+
+// A subject of the school (GET /api/subjects), e.g. English out of 100.
+class SubjectInfo {
+  final int id;
+  final String name;
+  final int maxMarks;
+
+  const SubjectInfo({required this.id, required this.name, required this.maxMarks});
+
+  factory SubjectInfo.fromJson(Map<String, dynamic> json) =>
+      SubjectInfo(id: json['id'], name: json['name'], maxMarks: json['maxMarks']);
+}
+
+// What the Admin sends to create a class or change its teachers.
+// subjectTeachers: subjectId -> teacherId (null = subject not taught in this class).
+class ClassTeachersRequest {
+  final int? classTeacherId;
+  final Map<int, int?> subjectTeachers;
+
+  const ClassTeachersRequest({this.classTeacherId, required this.subjectTeachers});
+
+  List<Map<String, dynamic>> get subjectTeachersJson => [
+        for (final e in subjectTeachers.entries) {'subjectId': e.key, 'teacherId': e.value}
+      ];
 }

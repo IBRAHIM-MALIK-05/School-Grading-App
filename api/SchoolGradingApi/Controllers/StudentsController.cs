@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SchoolGradingApi.database;
 using SchoolGradingApi.Dtos;
+using SchoolGradingApi.entities;
 using SchoolGradingApi.helpers;
 
 namespace SchoolGradingApi.Controllers
@@ -13,7 +14,9 @@ namespace SchoolGradingApi.Controllers
         {
         }
 
-        // 11) DELETE /api/students/{id}  -> delete a student (and their marks)
+        // 11) DELETE /api/students/{id}  -> delete a student (and ALL their marks)
+        //     Only the Class Teacher of the student's class, or the Admin.
+        //     (There is deliberately NO "edit student" endpoint: a wrong entry is deleted and added again.)
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
@@ -25,14 +28,35 @@ namespace SchoolGradingApi.Controllers
             if (student == null) return Error(404, "Student not found.");
 
             var schoolClass = student.SchoolClass!;
-            if (!CanManageStudents(me, schoolClass)) return Error(403, "You can only manage students of your own classes.");
+            if (!CanManageStudents(me, schoolClass)) return OnlyClassTeacherOrAdmin(schoolClass);
             if (schoolClass.ResultsPublishedAt != null)
                 return Error(409, "Results of " + DtoMapper.ClassName(schoolClass) + " are published. Unpublish first.");
 
-            _db.Students.Remove(student);   // marks are deleted too (ON DELETE CASCADE)
+            string className = DtoMapper.ClassName(schoolClass);
+            string removedBy = me.Role == "admin" ? "Admin" : "Class Teacher";
+
+            // Delete every mark of this student explicitly (all subjects of the class),
+            // then the student; and leave a notice for the subject teachers. One save = one transaction.
+            var marks = _db.Marks.Where(m => m.StudentId == student.Id).ToList();
+            _db.Marks.RemoveRange(marks);
+            _db.Students.Remove(student);
+            _db.StudentRemovals.Add(new StudentRemoval
+            {
+                ClassId = schoolClass.Id,
+                StudentName = student.FullName,
+                RollNo = student.RollNo,
+                RemovedById = me.Id,
+                RemovedByRole = removedBy,
+                RemovedAt = DateTime.UtcNow
+            });
             _db.SaveChanges();
 
-            return Ok(new { message = student.FullName + " deleted." });
+            return Ok(new
+            {
+                message = student.FullName + " was deleted from " + className + " by the " + removedBy +
+                          " (removed from all subjects).",
+                marksDeleted = marks.Count
+            });
         }
 
         // 12) GET /api/students/{id}/report-card  -> the student's result card
@@ -80,6 +104,7 @@ namespace SchoolGradingApi.Controllers
             return Ok(new ReportCardDto
             {
                 SchoolName = GradeHelper.SchoolName,
+                ClassId = schoolClass.Id,
                 StudentName = student.FullName,
                 RollNo = student.RollNo,
                 ClassName = DtoMapper.ClassName(schoolClass),
@@ -90,7 +115,8 @@ namespace SchoolGradingApi.Controllers
                 Percentage = percentage,
                 Grade = grade,
                 IsComplete = isComplete,
-                IsPublished = schoolClass.ResultsPublishedAt != null
+                IsPublished = schoolClass.ResultsPublishedAt != null,
+                CanPrint = schoolClass.ClassTeacherId == me.Id   // Admin / VP: view only
             });
         }
     }

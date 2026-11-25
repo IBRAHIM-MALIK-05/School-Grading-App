@@ -1,13 +1,14 @@
 // lib/widgets/app_drawer.dart
 // The side menu. It shows different options for each role:
-//   Admin   : Users, Create Account, Manage Students
-//   Teacher : My Subjects, My Class (if Class Teacher), Manage Students
+//   Admin   : Users, Create Account, Manage Classes, Manage Students
+//   Teacher : My Subjects, My Class + Manage Students (only if Class Teacher)
 //   VP      : School Overview
 // Everyone : Change Password, Logout
 
 import 'package:flutter/material.dart';
 
 import '../screens/admin/create_account_screen.dart';
+import '../screens/admin/manage_classes_screen.dart';
 import '../screens/auth/change_password_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/shared/class_tracker_screen.dart';
@@ -103,7 +104,14 @@ class AppDrawer extends StatelessWidget {
                     classId: user.classTeacherOfClassId!, isClassTeacher: true),
               ),
             ),
-          if (user.isAdmin || user.isTeacher)
+          if (user.isAdmin)
+            ListTile(
+              leading: const Icon(Icons.class_outlined),
+              title: const Text('Manage Classes'),
+              onTap: () => _open(context, const ManageClassesScreen()),
+            ),
+          // Only the Admin or a Class Teacher (for their own class) can add / delete students
+          if (user.isAdmin || user.isClassTeacher)
             ListTile(
               leading: const Icon(Icons.manage_accounts_outlined),
               title: const Text('Manage Students'),

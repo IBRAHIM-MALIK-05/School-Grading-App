@@ -54,13 +54,20 @@ namespace SchoolGradingApi.Controllers
             return DtoMapper.ToUserDto(user, myClass);
         }
 
-        // Admin: any class. Teacher: classes they teach in, or are class teacher of.
+        // Who may see / add / delete the students of a class?
+        // ONLY the Admin (any class) or the Class Teacher of THAT class.
+        // A subject teacher who only teaches a subject there is NOT allowed (403):
+        // they see their students on the marks screen instead.
         protected bool CanManageStudents(AppUser me, SchoolClass schoolClass)
         {
             if (me.Role == "admin") return true;
-            if (me.Role != "teacher") return false;
-            if (schoolClass.ClassTeacherId == me.Id) return true;
-            return _db.TeachingAssignments.Any(a => a.ClassId == schoolClass.Id && a.TeacherId == me.Id);
+            return me.Role == "teacher" && schoolClass.ClassTeacherId == me.Id;
+        }
+
+        protected IActionResult OnlyClassTeacherOrAdmin(SchoolClass schoolClass)
+        {
+            return Error(403, "Only the Class Teacher of " + DtoMapper.ClassName(schoolClass) +
+                              " or the Admin can add or delete its students.");
         }
 
         // Admin and Principal/VP: any class. Teacher: only the class they are class teacher of.

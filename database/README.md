@@ -144,7 +144,28 @@ Business rules (marks between 0 and max, "cannot edit a published class",
 | `01_create_database.sql` | Creates the empty database with the right collation (same as the phpMyAdmin step) |
 | `README.md` | This design document |
 | `02_initial_create_generated_by_ef.sql` | The SQL that EF Core generated from the C# entities (what Update-Database ran) – for reading only |
-| *(Milestone 3)* `school_grading_export.sql` | phpMyAdmin export used to migrate to Azure |
+| `03_school_grading_export_for_azure.sql` | phpMyAdmin export used to migrate to Azure (Milestone 3); `student_removals` was added to it later so XAMPP and Azure stay identical |
+| `04_add_student_removals_generated_by_ef.sql` | SQL of the 2nd migration `AddStudentRemovals` (one new table, see below) – for reading only |
+
+## Later change: `student_removals` (migration `AddStudentRemovals`)
+When a Class Teacher (or the Admin) deletes a student, the student row and ALL their marks are
+deleted. One small row is kept in `student_removals` (class, student name, roll number, who
+removed them, when) so the **subject teachers** of that class see
+*"Ali (roll 06) was removed by the Class Teacher of Class 8 - B"* on their marks screen
+instead of wondering why the name vanished.
+
+| Column | Type | Notes |
+|---|---|---|
+| Id | int, PK, auto-increment | |
+| ClassId | int, FK → classes.Id | which class |
+| StudentName | varchar(100) | copied, because the student row is gone |
+| RollNo | varchar(10) | copied |
+| RemovedById | int, FK → users.Id | who deleted the student |
+| RemovedByRole | varchar(20) | "Class Teacher" or "Admin" |
+| RemovedAt | datetime(6) | UTC |
+
+Applied locally with `dotnet ef database update`; on Azure the same table is created by
+`tools/azure/import_to_azure.py --reset` (it imports `03_…_export_for_azure.sql`).
 
 ## How the tables were created (Milestone 4)
 1. `Add-Migration InitialCreate` (CLI: `dotnet ef migrations add InitialCreate`) – EF Core

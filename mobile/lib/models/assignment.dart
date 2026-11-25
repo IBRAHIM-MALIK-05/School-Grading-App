@@ -68,15 +68,40 @@ class MarkRow {
       );
 }
 
+// "Ali (roll 06) was removed by the Class Teacher of Class 8 - B ..."
+class RemovalNotice {
+  final String studentName;
+  final String rollNo;
+  final String message;
+  final DateTime removedAt;
+
+  const RemovalNotice({
+    required this.studentName,
+    required this.rollNo,
+    required this.message,
+    required this.removedAt,
+  });
+
+  factory RemovalNotice.fromJson(Map<String, dynamic> json) => RemovalNotice(
+        studentName: json['studentName'],
+        rollNo: json['rollNo'],
+        message: json['message'],
+        removedAt: dateFromJson(json['removedAt'])!,
+      );
+}
+
 // Everything the Marks Entry screen needs.
 class AssignmentMarks {
   final TeacherAssignment assignment;
   final List<MarkRow> rows;
+  final List<RemovalNotice> removedStudents; // deleted by the Class Teacher (last 30 days)
 
-  const AssignmentMarks({required this.assignment, required this.rows});
+  const AssignmentMarks(
+      {required this.assignment, required this.rows, this.removedStudents = const []});
 
   factory AssignmentMarks.fromJson(Map<String, dynamic> json) => AssignmentMarks(
         assignment: TeacherAssignment.fromJson(json['assignment']),
         rows: listFromJson(json['rows'], MarkRow.fromJson),
+        removedStudents: listFromJson(json['removedStudents'] ?? [], RemovalNotice.fromJson),
       );
 }

@@ -175,8 +175,36 @@ class ApiDataService implements DataService {
   }
 
   @override
-  Future<void> deleteStudent(int studentId) async {
-    await _request('DELETE', '/students/$studentId');
+  Future<List<SubjectInfo>> getSubjects() async {
+    final data = await _request('GET', '/subjects');
+    return listFromJson(data, SubjectInfo.fromJson);
+  }
+
+  @override
+  Future<SchoolClass> createClass(
+      String gradeName, String section, ClassTeachersRequest teachers) async {
+    final data = await _request('POST', '/classes', body: {
+      'gradeName': gradeName,
+      'section': section,
+      'classTeacherId': teachers.classTeacherId,
+      'subjectTeachers': teachers.subjectTeachersJson,
+    });
+    return SchoolClass.fromJson(data);
+  }
+
+  @override
+  Future<SchoolClass> updateClassTeachers(int classId, ClassTeachersRequest teachers) async {
+    final data = await _request('PUT', '/classes/$classId/assignments', body: {
+      'classTeacherId': teachers.classTeacherId,
+      'subjectTeachers': teachers.subjectTeachersJson,
+    });
+    return SchoolClass.fromJson(data);
+  }
+
+  @override
+  Future<String> deleteStudent(int studentId) async {
+    final data = await _request('DELETE', '/students/$studentId');
+    return (data is Map && data['message'] != null) ? data['message'] : 'Student deleted.';
   }
 
   @override

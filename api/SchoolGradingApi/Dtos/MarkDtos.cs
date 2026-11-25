@@ -24,18 +24,29 @@ namespace SchoolGradingApi.Dtos
         public int? Obtained { get; set; }   // null = no mark yet
     }
 
+    // "Ali (roll 06) was removed by the Class Teacher of Class 8 - B"
+    public class RemovalNoticeDto
+    {
+        public string StudentName { get; set; } = "";
+        public string RollNo { get; set; } = "";
+        public string Message { get; set; } = "";
+        public DateTime RemovedAt { get; set; }
+    }
+
     // GET /api/assignments/{id}/marks
     public class AssignmentMarksDto
     {
         public TeacherAssignmentDto Assignment { get; set; } = new TeacherAssignmentDto();
         public List<MarkRowDto> Rows { get; set; } = new List<MarkRowDto>();
+        // Students recently deleted from this class (last 30 days, newest first)
+        public List<RemovalNoticeDto> RemovedStudents { get; set; } = new List<RemovalNoticeDto>();
     }
 
     // PUT /api/assignments/{id}/marks  (upload + update in one call)
     public class SaveMarksDto
     {
         public List<MarkEntryDto> Marks { get; set; } = new List<MarkEntryDto>();
-        public bool Submit { get; set; }   // false = save draft, true = submit to Class Teacher
+        public bool Submit { get; set; }   // false = save progress, true = final submit to Class Teacher
     }
 
     public class MarkEntryDto

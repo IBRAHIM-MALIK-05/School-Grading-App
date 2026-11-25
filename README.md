@@ -20,6 +20,20 @@ A school result-management system: **Flutter app → ASP.NET Core Web API (.NET 
 | `maryam@school.com` | Teacher (Mathematics) + Class Teacher of 9-A |
 | `usman@school.com` | Teacher (Physics) + Class Teacher of 9-B |
 
+## Who can do what
+| Action | Admin | Class Teacher (own class) | Subject Teacher | Principal / VP |
+|---|---|---|---|---|
+| Create accounts, reset passwords | ✓ | | | |
+| Create a class, assign Class Teacher + subject teachers | ✓ | | | |
+| Add / delete students (no editing – delete and add again) | ✓ | ✓ | ✗ 403 | |
+| Enter marks, Save Progress, Review & Submit | | (own subjects) | ✓ | |
+| Class tracker + result-card readiness | ✓ (view) | ✓ | | ✓ (view) |
+| Result card | ✓ (view) | ✓ + **Print / Save PDF** | ✗ 403 | ✓ (view) |
+| Publish / unpublish results | | ✓ | | |
+
+Deleting a student removes them and all their marks from every subject of the class; the
+subject teachers then see *"… was removed by the Class Teacher of …"* on their marks screen.
+
 ## Run the API (local)
 1. Start **Apache + MySQL** in the XAMPP Control Panel (database `school_grading`).
 2. Open `api/SchoolGrading.slnx` in Visual Studio and press **Run (http)**  
@@ -56,7 +70,8 @@ First time only (creates the tables + demo data): Visual Studio → *Package Man
 ## Test the API (Postman / Newman)
 - Local: with the API running, double-click `postman/run_tests_local.cmd`.
 - Azure: double-click `postman/run_tests_azure.cmd` (wakes the server up first).
-- Both run 52 requests / 113 tests and write an HTML report to `postman/reports/`.
+- Both run 70 requests / 152 tests and write an HTML report to `postman/reports/`
+  (login tokens are removed from the report by `postman/redact_tokens.js`).
   Or import the JSON files in `postman/` into the Postman app and pick the *Local* or *Azure* environment.
 - Afterwards, reset the cloud data: `python tools/azure/import_to_azure.py --reset`.
 

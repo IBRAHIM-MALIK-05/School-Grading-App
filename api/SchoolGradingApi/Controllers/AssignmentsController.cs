@@ -79,6 +79,16 @@ namespace SchoolGradingApi.Controllers
                 .Where(m => m.SubjectId == assignment.SubjectId && m.Student!.ClassId == assignment.ClassId)
                 .ToList();
 
+            // Students the Class Teacher (or Admin) deleted from this class in the last 30 days,
+            // so the subject teacher knows why a name disappeared from the list.
+            string className = DtoMapper.ClassName(assignment.SchoolClass!);
+            var since = DateTime.UtcNow.AddDays(-30);
+            var removed = _db.StudentRemovals
+                .Where(r => r.ClassId == assignment.ClassId && r.RemovedAt >= since)
+                .OrderByDescending(r => r.RemovedAt)
+                .Take(10)
+                .ToList();
+
             return Ok(new AssignmentMarksDto
             {
                 Assignment = ToDto(assignment),
@@ -88,11 +98,20 @@ namespace SchoolGradingApi.Controllers
                     StudentName = s.FullName,
                     RollNo = s.RollNo,
                     Obtained = marks.FirstOrDefault(m => m.StudentId == s.Id)?.Obtained
+                }).ToList(),
+                RemovedStudents = removed.Select(r => new RemovalNoticeDto
+                {
+                    StudentName = r.StudentName,
+                    RollNo = r.RollNo,
+                    RemovedAt = r.RemovedAt,
+                    Message = r.StudentName + " (roll " + r.RollNo + ") was removed by the " +
+                              (r.RemovedByRole == "Admin" ? "Admin" : "Class Teacher of " + className) +
+                              " - their marks were deleted from every subject."
                 }).ToList()
             });
         }
 
-        // 15) PUT /api/assignments/{id}/marks  -> upload / update marks (draft or submit)
+        // 15) PUT /api/assignments/{id}/marks  -> upload / update marks (save progress or final submit)
         [HttpPut("{id}/marks")]
         public IActionResult SaveMarks(int id, SaveMarksDto dto)
         {
@@ -158,7 +177,7 @@ namespace SchoolGradingApi.Controllers
             }
 
             // 3) Submitted or not?  An incomplete subject can never stay "submitted"
-            //    (e.g. a mark was cleared), whether this was a draft save or a failed submit.
+            //    (e.g. a mark was cleared), whether this was a progress save or a failed submit.
             int missing = studentIds.Count - existingMarks.Count;
             if (missing > 0)
             {
@@ -173,7 +192,7 @@ namespace SchoolGradingApi.Controllers
             if (dto.Submit && missing > 0)
                 return Error(400, "Marks saved, but cannot submit: " + missing + " student(s) still have no marks.");
 
-            return Ok(new { message = dto.Submit ? "Marks submitted." : "Draft saved." });
+            return Ok(new { message = dto.Submit ? "Marks submitted." : "Progress saved (not submitted yet)." });
         }
     }
 }

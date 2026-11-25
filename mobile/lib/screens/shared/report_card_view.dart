@@ -1,10 +1,13 @@
 // lib/screens/shared/report_card_view.dart
 // One student's result card, built from the marks that teachers uploaded.
+// Print / Save PDF: ONLY the Class Teacher of this class (the API says so with canPrint).
+// Principal/VP and Admin can view it but not print; subject teachers get 403 from the API.
 
 import 'package:flutter/material.dart';
 
 import '../../models/report_card.dart';
 import '../../services/current_service.dart';
+import '../../services/report_card_pdf.dart';
 import '../../widgets/app_theme.dart';
 import '../../widgets/async_views.dart';
 
@@ -25,25 +28,72 @@ class _ReportCardViewState extends State<ReportCardView> {
     _future = dataService.getReportCard(widget.studentId);
   }
 
+  bool _isPrinting = false;
+
   void _reload() =>
       setState(() => _future = dataService.getReportCard(widget.studentId));
 
+  Future<void> _print(ReportCard card) async {
+    setState(() => _isPrinting = true);
+    try {
+      await printReportCard(card); // browser / system print dialog ("Save as PDF" too)
+    } catch (e) {
+      if (mounted) showMessage(context, 'Could not create the PDF. Please try again.', isError: true);
+    } finally {
+      if (mounted) setState(() => _isPrinting = false);
+    }
+  }
+
+  // Only for the Class Teacher, and only when every subject has a mark
+  Widget? _printBar(ReportCard card) {
+    if (!card.canPrint) return null;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            FilledButton.icon(
+              onPressed: (card.isComplete && !_isPrinting) ? () => _print(card) : null,
+              icon: _isPrinting
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.print_outlined),
+              label: const Text('Print / Save PDF'),
+              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+            ),
+            if (!card.isComplete)
+              const Padding(
+                padding: EdgeInsets.only(top: 6),
+                child: Text('Printing is available when every subject has marks.',
+                    textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted)),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Result Card')),
-      body: FutureBuilder<ReportCard>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const LoadingView(message: 'Preparing result card...');
-          }
-          if (snapshot.hasError) {
-            return ErrorView(error: snapshot.error!, onRetry: _reload);
-          }
-          return _buildCard(snapshot.data!);
-        },
-      ),
+    return FutureBuilder<ReportCard>(
+      future: _future,
+      builder: (context, snapshot) {
+        final done = snapshot.connectionState == ConnectionState.done;
+        final card = done && !snapshot.hasError ? snapshot.data : null;
+        return Scaffold(
+          appBar: AppBar(title: const Text('Result Card')),
+          body: !done
+              ? const LoadingView(message: 'Preparing result card...')
+              : snapshot.hasError
+                  ? ErrorView(error: snapshot.error!, onRetry: _reload)
+                  : _buildCard(card!),
+          bottomNavigationBar: card == null ? null : _printBar(card),
+        );
+      },
     );
   }
 
@@ -72,7 +122,7 @@ class _ReportCardViewState extends State<ReportCardView> {
               const SizedBox(height: 8),
               Center(
                 child: Text(
-                  card.isPublished ? 'FINAL RESULT' : 'DRAFT – not published yet',
+                  card.isPublished ? 'FINAL RESULT' : 'NOT PUBLISHED YET',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: card.isPublished ? AppColors.success : AppColors.warning,

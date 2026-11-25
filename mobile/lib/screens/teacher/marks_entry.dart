@@ -1,9 +1,10 @@
 // lib/screens/teacher/marks_entry.dart
 // A subject teacher enters marks for one class + subject.
-//  - "Save draft": saves what is typed so far (can be incomplete)
-//  - "Submit": only when every student has marks -> Class Teacher sees ✓
-// Rows contain ONLY the marks box (no add/delete student buttons here;
-// students are managed from the side menu -> "Manage Students").
+//  - "Save Progress": saves what is typed so far (can be incomplete) -> "Saved — Not Submitted Yet"
+//  - "Review & Submit Marks": opens a review list first; only "Confirm & Final Submit"
+//    there sends the final submit -> "Final Submitted" (the Class Teacher sees it).
+// Rows contain ONLY the marks box. Students are added / deleted by the Class Teacher;
+// if one was deleted, a notice at the top explains why the name disappeared.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,6 +15,7 @@ import '../../services/current_service.dart';
 import '../../widgets/app_theme.dart';
 import '../../widgets/async_views.dart';
 import '../../widgets/status_chip.dart';
+import 'review_marks_screen.dart';
 
 class MarksEntryScreen extends StatefulWidget {
   final int assignmentId;
@@ -91,38 +93,48 @@ class _MarksEntryScreenState extends State<MarksEntryScreen> {
     return result;
   }
 
-  Future<void> _save({required bool submit}) async {
+  // "Save Progress": keep what is typed, nothing is submitted
+  Future<void> _saveProgress() async {
     final form = _formKey.currentState; // null if the class has no students
+    if (form != null && !form.validate()) return;
+    await _send(_collectMarks(), submit: false);
+  }
+
+  // "Review & Submit Marks": show the review list; submit only after "Confirm & Final Submit"
+  Future<void> _reviewAndSubmit() async {
+    final form = _formKey.currentState;
     if (form != null && !form.validate()) return;
     final marks = _collectMarks();
 
-    if (submit) {
-      final empty = marks.values.where((m) => m == null).length;
-      if (empty > 0) {
-        showMessage(context, '$empty student(s) have no marks yet. Fill all boxes to submit.',
-            isError: true);
-        return;
-      }
-      final ok = await confirmDialog(
-        context,
-        title: 'Submit marks?',
-        message: 'The Class Teacher will see ${_data!.assignment.subjectName} '
-            'as submitted for ${_data!.assignment.className}. '
-            'You can still correct marks until results are published.',
-        confirmText: 'Submit',
-      );
-      if (!ok) return;
-    }
+    final confirmed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => ReviewMarksScreen(
+          assignment: _data!.assignment,
+          rows: _data!.rows,
+          marks: marks,
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return; // "Go Back & Edit"
+    await _send(marks, submit: true);
+  }
 
+  Future<void> _send(Map<int, int?> marks, {required bool submit}) async {
     setState(() => _isSaving = true);
     try {
       await dataService.saveMarks(widget.assignmentId, marks, submit: submit);
       if (!mounted) return;
-      showMessage(context, submit ? 'Marks submitted!' : 'Draft saved.');
+      showMessage(
+          context,
+          submit
+              ? 'Final Submitted! The Class Teacher can now see your marks.'
+              : 'Progress saved — not submitted yet.');
       if (submit) {
         Navigator.pop(context);
       } else {
-        _load(); // refresh the status
+        _load(); // refresh the status badge
       }
     } catch (e) {
       if (mounted) showMessage(context, errorText(e), isError: true);
@@ -137,11 +149,27 @@ class _MarksEntryScreenState extends State<MarksEntryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        // Title now comes from the real assignment (no more hard-coded "Biology")
+        // Title comes from the real assignment (no hard-coded subject)
         title: Text(a == null ? 'Marks Entry' : '${a.className} • ${a.subjectName}'),
       ),
       body: _buildBody(),
       bottomNavigationBar: (a == null || a.isClassPublished) ? null : _buildButtons(),
+    );
+  }
+
+  Widget _banner(IconData icon, Color color, Color background, String text) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: background,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 8),
+          Expanded(child: Text(text)),
+        ],
+      ),
     );
   }
 
@@ -155,9 +183,9 @@ class _MarksEntryScreenState extends State<MarksEntryScreen> {
 
     return Column(
       children: [
-        // Info bar
+        // Info bar: counts + plain-word status badge
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           color: Colors.white,
           child: Row(
             children: [
@@ -172,30 +200,19 @@ class _MarksEntryScreenState extends State<MarksEntryScreen> {
             ],
           ),
         ),
+        if (!locked)
+          _banner(Icons.lightbulb_outline, AppColors.primary, Colors.blue.shade50,
+              "Save your marks anytime while working. Click 'Review & Submit' when all students are graded."),
         if (locked)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            color: Colors.green.shade50,
-            child: const Row(
-              children: [
-                Icon(Icons.lock, color: AppColors.success),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                      'Results are published by the Class Teacher. Marks are locked.'),
-                ),
-              ],
-            ),
-          ),
+          _banner(Icons.lock, AppColors.success, Colors.green.shade50,
+              'Results are published by the Class Teacher. Marks are locked.'),
         if (!locked && a.state == SubmissionState.submitted)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            color: Colors.blue.shade50,
-            child: const Text(
-                'Already submitted. You can still correct marks and submit again.'),
-          ),
+          _banner(Icons.verified, AppColors.success, Colors.green.shade50,
+              'Final Submitted. You can still correct marks and submit again until results are published.'),
+        // Students the Class Teacher deleted: say so instead of letting them silently vanish
+        for (final notice in _data!.removedStudents)
+          _banner(Icons.person_remove_outlined, AppColors.warning, Colors.orange.shade50,
+              notice.message),
         Expanded(
           child: rows.isEmpty
               ? const EmptyView(message: 'No students in this class yet.')
@@ -254,7 +271,7 @@ class _MarksEntryScreenState extends State<MarksEntryScreen> {
                   isDense: true,
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return null; // empty is allowed in a draft
+                  if (value == null || value.isEmpty) return null; // empty is fine while saving progress
                   final number = int.tryParse(value);
                   if (number == null || number < 0 || number > maxMarks) {
                     return '0 - $maxMarks';
@@ -277,9 +294,9 @@ class _MarksEntryScreenState extends State<MarksEntryScreen> {
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: _isSaving ? null : () => _save(submit: false),
+                onPressed: _isSaving ? null : _saveProgress,
                 icon: const Icon(Icons.save_outlined),
-                label: const Text('Save draft'),
+                label: const Text('Save Progress'),
                 style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16)),
               ),
@@ -287,15 +304,15 @@ class _MarksEntryScreenState extends State<MarksEntryScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton.icon(
-                onPressed: _isSaving ? null : () => _save(submit: true),
+                onPressed: _isSaving ? null : _reviewAndSubmit,
                 icon: _isSaving
                     ? const SizedBox(
                         height: 18,
                         width: 18,
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.send),
-                label: const Text('Submit'),
+                    : const Icon(Icons.fact_check_outlined),
+                label: const Text('Review & Submit Marks'),
                 style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16)),
               ),

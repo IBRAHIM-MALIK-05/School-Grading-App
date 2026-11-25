@@ -10,6 +10,7 @@ import '../../widgets/app_theme.dart';
 import '../../widgets/async_views.dart';
 import 'create_account_screen.dart';
 import 'credentials_dialog.dart';
+import 'manage_classes_screen.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -36,6 +37,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     await Navigator.push(context,
         MaterialPageRoute(builder: (_) => const CreateAccountScreen()));
     _reload(); // show the new user
+  }
+
+  Future<void> _openManageClasses() async {
+    await Navigator.push(
+        context, MaterialPageRoute(builder: (_) => const ManageClassesScreen()));
+    _reload(); // Class Teacher labels may have changed
   }
 
   Future<void> _resetPassword(AppUser user) async {
@@ -109,6 +116,19 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 Text('${users.length} accounts',
                     style: const TextStyle(color: AppColors.muted)),
                 const SizedBox(height: 16),
+                // Manage Classes: create a class, assign its Class Teacher + subject teachers
+                Card(
+                  color: Colors.blue.shade50,
+                  child: ListTile(
+                    leading: const Icon(Icons.class_outlined, color: AppColors.primary),
+                    title: const Text('Manage Classes',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: const Text('Create a class • assign Class Teacher & subject teachers'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _openManageClasses,
+                  ),
+                ),
+                const SizedBox(height: 8),
                 for (final user in users)
                   Card(
                     child: ListTile(

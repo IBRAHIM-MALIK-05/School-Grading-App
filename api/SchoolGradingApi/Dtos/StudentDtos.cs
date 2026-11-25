@@ -40,6 +40,7 @@ namespace SchoolGradingApi.Dtos
     public class ReportCardDto
     {
         public string SchoolName { get; set; } = "";
+        public int ClassId { get; set; }
         public string StudentName { get; set; } = "";
         public string RollNo { get; set; } = "";
         public string ClassName { get; set; } = "";
@@ -51,5 +52,6 @@ namespace SchoolGradingApi.Dtos
         public string? Grade { get; set; }        // null while incomplete
         public bool IsComplete { get; set; }
         public bool IsPublished { get; set; }
+        public bool CanPrint { get; set; }   // only the Class Teacher of this class may print / save PDF
     }
 }

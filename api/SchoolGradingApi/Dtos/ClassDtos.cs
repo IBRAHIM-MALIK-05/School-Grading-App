@@ -46,12 +46,68 @@ namespace SchoolGradingApi.Dtos
         public DateTime? SubmittedAt { get; set; }
     }
 
+    // One subject a student's result card is still waiting for
+    public class WaitingOnDto
+    {
+        public string SubjectName { get; set; } = "";
+        public string TeacherName { get; set; } = "";
+        public string Reason { get; set; } = "";   // "no mark entered yet" / "not submitted yet"
+    }
+
+    // Is this student's result card ready? If not: exactly which subject(s) + teacher(s)
+    public class StudentReadinessDto
+    {
+        public int StudentId { get; set; }
+        public string FullName { get; set; } = "";
+        public string RollNo { get; set; } = "";
+        public bool IsReady { get; set; }   // every subject submitted AND has a mark for this student
+        public List<WaitingOnDto> WaitingOn { get; set; } = new List<WaitingOnDto>();
+    }
+
     // GET /api/classes/{id}/tracker
     public class TrackerDto
     {
         public SchoolClassDto SchoolClass { get; set; } = new SchoolClassDto();
         public List<SubjectStatusDto> Subjects { get; set; } = new List<SubjectStatusDto>();
         public List<StudentDto> Students { get; set; } = new List<StudentDto>();
+        public List<StudentReadinessDto> Readiness { get; set; } = new List<StudentReadinessDto>();
+    }
+
+    // One subject + its teacher, used when the Admin creates a class or changes its teachers.
+    // TeacherId = null (only in PUT .../assignments) removes that subject from the class.
+    public class SubjectTeacherDto
+    {
+        public int SubjectId { get; set; }
+        public int? TeacherId { get; set; }
+    }
+
+    // POST /api/classes  (Admin creates a class)
+    public class CreateClassDto
+    {
+        public const int MaxGradeNameLength = 20;   // classes.GradeName
+        public const int MaxSectionLength = 5;      // classes.Section
+
+        public string GradeName { get; set; } = "";   // "Class 10"
+        public string Section { get; set; } = "";     // "A"
+        public int? ClassTeacherId { get; set; }      // optional
+        public List<SubjectTeacherDto> SubjectTeachers { get; set; } = new List<SubjectTeacherDto>();
+    }
+
+    // PUT /api/classes/{id}/assignments  (Admin changes the Class Teacher / subject teachers)
+    // ClassTeacherId: the class teacher after saving (null = none).
+    // SubjectTeachers: only the subjects listed are changed; others stay as they are.
+    public class ClassTeachersDto
+    {
+        public int? ClassTeacherId { get; set; }
+        public List<SubjectTeacherDto> SubjectTeachers { get; set; } = new List<SubjectTeacherDto>();
+    }
+
+    // GET /api/subjects
+    public class SubjectDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public int MaxMarks { get; set; }
     }
 
     // PUT /api/classes/{id}/publish

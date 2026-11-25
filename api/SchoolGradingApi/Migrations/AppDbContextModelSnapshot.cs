@@ -856,6 +856,45 @@ namespace SchoolGradingApi.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SchoolGradingApi.entities.StudentRemoval", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("ClassId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RemovedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("RemovedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RemovedByRole")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("RollNo")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
+
+                    b.Property<string>("StudentName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassId");
+
+                    b.HasIndex("RemovedById");
+
+                    b.ToTable("student_removals", (string)null);
+                });
+
             modelBuilder.Entity("SchoolGradingApi.entities.Subject", b =>
                 {
                     b.Property<int>("Id")
@@ -1170,6 +1209,25 @@ namespace SchoolGradingApi.Migrations
                         .HasForeignKey("ClassId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("SchoolClass");
+                });
+
+            modelBuilder.Entity("SchoolGradingApi.entities.StudentRemoval", b =>
+                {
+                    b.HasOne("SchoolGradingApi.entities.SchoolClass", "SchoolClass")
+                        .WithMany()
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SchoolGradingApi.entities.AppUser", "RemovedBy")
+                        .WithMany()
+                        .HasForeignKey("RemovedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("RemovedBy");
 
                     b.Navigation("SchoolClass");
                 });

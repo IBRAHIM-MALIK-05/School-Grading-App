@@ -18,6 +18,7 @@ namespace SchoolGradingApi.database
         public DbSet<Student> Students => Set<Student>();
         public DbSet<TeachingAssignment> TeachingAssignments => Set<TeachingAssignment>();
         public DbSet<Mark> Marks => Set<Mark>();
+        public DbSet<StudentRemoval> StudentRemovals => Set<StudentRemoval>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -166,6 +167,36 @@ namespace SchoolGradingApi.database
             modelBuilder.Entity<Mark>()
                 .HasIndex(e => new { e.StudentId, e.SubjectId })
                 .IsUnique();                      // one mark per student per subject
+
+            // ---------------- student_removals (notices for subject teachers) ----------------
+            modelBuilder.Entity<StudentRemoval>().ToTable("student_removals");
+
+            modelBuilder.Entity<StudentRemoval>()
+                .Property(e => e.StudentName)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            modelBuilder.Entity<StudentRemoval>()
+                .Property(e => e.RollNo)
+                .HasMaxLength(10)
+                .IsRequired();
+
+            modelBuilder.Entity<StudentRemoval>()
+                .Property(e => e.RemovedByRole)
+                .HasMaxLength(20)
+                .IsRequired();
+
+            modelBuilder.Entity<StudentRemoval>()
+                .HasOne(e => e.SchoolClass)
+                .WithMany()
+                .HasForeignKey(e => e.ClassId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<StudentRemoval>()
+                .HasOne(e => e.RemovedBy)
+                .WithMany()
+                .HasForeignKey(e => e.RemovedById)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // ---------------- demo data ----------------
             SeedData.Add(modelBuilder);
