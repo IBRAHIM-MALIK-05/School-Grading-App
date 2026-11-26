@@ -190,7 +190,7 @@ def main():
     if "--reset" in sys.argv:
         # Put the cloud database back to the clean demo data (e.g. after Postman / app tests)
         step_import(config)
-        print("\n".join(step_compare(config)[:12]))
+        print("\n".join(step_compare(config)[:18]))
         print("Azure database reset to the clean demo data.")
         return
     OUT.mkdir(parents=True, exist_ok=True)

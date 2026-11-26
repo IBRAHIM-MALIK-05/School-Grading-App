@@ -9,7 +9,7 @@
 | `run_tests_azure.cmd` | The same against **Azure** (wakes up the free F1 server first) |
 | `reports/local_test_report.html` | Latest HTML report (open in a browser) |
 | `reports/local_cli_output.txt` | The same run as plain text |
-| `reports/azure_test_report.html`, `reports/azure_cli_output.txt` | Latest run against Azure (148 requests, 285 tests, 0 failures) |
+| `reports/azure_test_report.html`, `reports/azure_cli_output.txt` | Latest run against Azure (200 requests, 399 tests, 0 failures) |
 
 ## Run in the Postman app
 1. Postman → **Import** → select both JSON files.

@@ -8,7 +8,7 @@ A school result-management system: **Flutter app → ASP.NET Core Web API (.NET 
 | `api/` | ASP.NET Core Web API (Visual Studio `.slnx`, EF Core code-first) |
 | `database/` | SQL exports from phpMyAdmin (local XAMPP → cloud) |
 | `postman/` | Postman collection + environments for API testing |
-| `docs/` | Report, User Manual, PowerPoint, screenshots |
+| `docs/` | Report, User Manual, PowerPoint, screenshots, [database guide (local + cloud)](docs/DATABASE_GUIDE_LOCAL_AND_CLOUD.md) |
 
 ## Demo logins (password `123` for all)
 | Login ID | Role |
