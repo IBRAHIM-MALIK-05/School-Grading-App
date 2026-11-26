@@ -192,10 +192,14 @@ namespace SchoolGradingApi.Controllers
             if (dto.Submit && missing > 0)
                 return Error(400, "Marks saved, but cannot submit: " + missing + " student(s) still have no marks.");
 
-            // Was this the teacher's last pending subject? Then the automatic Result Date
+            // Submitted: the Class Teacher's reminders about THIS subject + class are marked read.
+            // Was it also the teacher's last pending subject? Then the automatic Result Date
             // reminders stop bothering them (their unread deadline_* notifications are marked read).
             if (dto.Submit)
+            {
+                DeadlineReminders.ClearClassTeacherReminders(_db, me.Id, assignment.Id);
                 DeadlineReminders.StopIfAllSubmitted(_db, me.Id);
+            }
 
             return Ok(new { message = dto.Submit ? "Marks submitted." : "Progress saved (not submitted yet)." });
         }

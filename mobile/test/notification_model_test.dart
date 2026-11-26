@@ -59,4 +59,11 @@ void main() {
     expect(daysLeftText(0), 'Today');
     expect(daysLeftText(-1), 'Passed');
   });
+
+  test('result date banner text depends on pending marks', () {
+    expect(resultDateBannerText(2, allSubmitted: false), '2 days left - please submit all your marks now.');
+    expect(resultDateBannerText(5, allSubmitted: false), '5 days left - set by the Principal / VP.');
+    expect(resultDateBannerText(2, allSubmitted: true), '2 days left - all your marks are submitted.');
+    expect(resultDateBannerText(0, allSubmitted: true), 'Today - all your marks are submitted.');
+  });
 }

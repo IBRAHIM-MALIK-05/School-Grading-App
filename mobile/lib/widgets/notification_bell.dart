@@ -1,6 +1,7 @@
 // lib/widgets/notification_bell.dart
 //  - NotificationBell : the bell in a Teacher's AppBar with a red unread-count badge
 //  - ResultDateBanner : "Result Date: Sat 28 Nov 2026 - 2 days left" on the Teacher home screen
+//                       (green "all your marks are submitted" once nothing is pending)
 // Both redraw by themselves whenever notificationCenter gets new data (every 30 seconds).
 
 import 'package:flutter/material.dart';
@@ -39,7 +40,10 @@ class NotificationBell extends StatelessWidget {
 }
 
 class ResultDateBanner extends StatelessWidget {
-  const ResultDateBanner({super.key});
+  // true = every subject of this teacher is submitted -> calm green banner
+  final bool allSubmitted;
+
+  const ResultDateBanner({super.key, required this.allSubmitted});
 
   @override
   Widget build(BuildContext context) {
@@ -51,21 +55,26 @@ class ResultDateBanner extends StatelessWidget {
         final days = inbox.daysRemaining;
         if (date == null || days == null || days < 0) return const SizedBox.shrink();
 
-        final urgent = days <= 2;
-        final color = urgent ? AppColors.danger : AppColors.primary;
+        final urgent = days <= 2 && !allSubmitted;
+        final color = allSubmitted
+            ? AppColors.success
+            : (urgent ? AppColors.danger : AppColors.primary);
+        final IconData icon = allSubmitted
+            ? Icons.check_circle
+            : (urgent ? Icons.warning_amber_rounded : Icons.event);
         return Card(
-          color: urgent ? const Color(0xFFFFEBEE) : null,
+          color: allSubmitted
+              ? const Color(0xFFE8F5E9)
+              : (urgent ? const Color(0xFFFFEBEE) : null),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(color: color.withValues(alpha: 0.5)),
           ),
           child: ListTile(
-            leading: Icon(urgent ? Icons.warning_amber_rounded : Icons.event, color: color),
+            leading: Icon(icon, color: color),
             title: Text('Result Date: ${formatDay(date)}',
                 style: TextStyle(fontWeight: FontWeight.bold, color: color)),
-            subtitle: Text(urgent
-                ? '${daysLeftText(days)} - please submit all your marks now.'
-                : '${daysLeftText(days)} - set by the Principal / VP.'),
+            subtitle: Text(resultDateBannerText(days, allSubmitted: allSubmitted)),
           ),
         );
       },

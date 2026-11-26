@@ -32,6 +32,14 @@ String daysLeftText(int? days) {
   return days == 1 ? '1 day left' : '$days days left';
 }
 
+// Second line of the teacher's Result Date banner.
+// allSubmitted = the teacher has subjects and every one of them is submitted.
+String resultDateBannerText(int days, {required bool allSubmitted}) {
+  if (allSubmitted) return '${daysLeftText(days)} - all your marks are submitted.';
+  if (days <= 2) return '${daysLeftText(days)} - please submit all your marks now.';
+  return '${daysLeftText(days)} - set by the Principal / VP.';
+}
+
 class AppNotification {
   static const classTeacherReminder = 'class_teacher_reminder';
 

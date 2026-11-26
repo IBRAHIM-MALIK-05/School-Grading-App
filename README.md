@@ -67,10 +67,12 @@ The backend maintainer has extra Admin-only endpoints in **Swagger only** – th
   - 2–0 days → red `deadline_urgent`.
 
   A teacher gets at most one reminder per type per day, and only while they still have
-  unsubmitted marks. Their last *Submit* marks the unread reminders as read.
+  unsubmitted marks. Their last *Submit* marks the unread reminders as read, and their
+  Result Date banner turns green: "all your marks are submitted".
 - On **My Class** the Class Teacher presses **Notify** next to a pending subject. That
   subject teacher gets a *"Marks Reminder — Class 8 - B (Physics)"* with an optional note.
   The same subject cannot be nudged again while the last reminder is unread (429, 60 min).
+  When that teacher submits the subject, the reminder is marked as read by itself.
 - New unread notifications pop up as a real phone / Windows / browser alert. On the web,
   permission is asked only after a click on *Enable Desktop/Browser Alerts*; `zonedSchedule`
   is never used. If alerts are blocked, the bell and the in-app message still work.

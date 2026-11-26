@@ -131,5 +131,20 @@ namespace SchoolGradingApi.helpers
             }
             db.SaveChanges();
         }
+
+        // The teacher submitted this subject + class: the Class Teacher's reminders about it
+        // ("Marks Reminder - Class 8 - B (Physics)") are done, so they are marked as read.
+        public static void ClearClassTeacherReminders(AppDbContext db, int teacherId, int assignmentId)
+        {
+            var unread = db.Notifications
+                .Where(n => n.RecipientUserId == teacherId && !n.IsRead &&
+                            n.Type == ClassTeacherReminder && n.AssignmentId == assignmentId)
+                .ToList();
+            foreach (var n in unread)
+            {
+                n.IsRead = true;
+            }
+            db.SaveChanges();
+        }
     }
 }

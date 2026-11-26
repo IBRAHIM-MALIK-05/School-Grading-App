@@ -151,7 +151,11 @@ class _TeacherDashboardState extends State<TeacherDashboard> with WidgetsBinding
                 Text('Welcome ${user.fullName}',
                     style: const TextStyle(fontSize: 24)),
                 const SizedBox(height: 8),
-                const ResultDateBanner(), // only shown when the VP has set a Result Date
+                // only shown when the VP has set a Result Date; green once all marks are submitted
+                ResultDateBanner(
+                  allSubmitted: assignments.isNotEmpty &&
+                      assignments.every((a) => a.submittedAt != null),
+                ),
                 if (user.isClassTeacher) _classTeacherCard(user.classTeacherOfClassName!),
                 const SizedBox(height: 16),
                 if (assignments.isEmpty)
