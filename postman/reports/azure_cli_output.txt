@@ -5,7 +5,7 @@ School Grading API
 
 □ 1. Auth - Login
 └ Login - Admin
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 1.25kB, 1006ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 1.25kB, 848ms]
   √  Status is 200 OK
   √  Response time under 3 seconds
   √  Response has a JWT token
@@ -13,7 +13,7 @@ School Grading API
   √  Role is admin
 
 └ Login - Principal / VP
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 879B, 395ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 879B, 351ms]
   √  Status is 200 OK
   √  Response time under 3 seconds
   √  Response has a JWT token
@@ -21,7 +21,7 @@ School Grading API
   √  Role is vp
 
 └ Login - Teacher Sania (Class Teacher of 8-B)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 916B, 370ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 914B, 463ms]
   √  Status is 200 OK
   √  Response time under 3 seconds
   √  Response has a JWT token
@@ -29,113 +29,113 @@ School Grading API
   √  Sania is Class Teacher of Class 8 - B
 
 └ Login - Teacher Maryam (Class Teacher of 9-A)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 920B, 368ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 920B, 376ms]
   √  Status is 200 OK
   √  Response time under 3 seconds
   √  Response has a JWT token
   √  Password hash is never returned
 
 └ Login - wrong password
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [401 Unauthorized, 201B, 342ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [401 Unauthorized, 201B, 486ms]
   √  Status is 401 Unauthorized
   √  Error message mentions "Invalid Login ID or password"
 
 └ Login - Admin on Admin Login (portal admin)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 903B, 446ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 903B, 389ms]
   √  Status is 200 OK
   √  Gets a token as Admin
 
 └ Login - Teacher / VP on Staff Login (portal staff)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 879B, 373ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 879B, 350ms]
   √  Status is 200 OK
   √  Gets a token as VP
 
 └ Login - Admin on Staff Login (refused)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [403 Forbidden, 225B, 381ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [403 Forbidden, 225B, 361ms]
   √  Status is 403 Forbidden
   √  Message: Login as Admin
   √  No token is given out
 
 └ Login - Teacher on Admin Login (refused)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [403 Forbidden, 224B, 616ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [403 Forbidden, 224B, 334ms]
   √  Status is 403 Forbidden
   √  Message: Admins only, use Staff Login
   √  No token is given out
 
 └ Login - wrong password on Admin Login (no role revealed)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [401 Unauthorized, 201B, 353ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [401 Unauthorized, 201B, 366ms]
   √  Status is 401 Unauthorized
   √  Message: Invalid Login ID or password
 
 □ 2. Auth - Create account & first login
 └ Register - new Teacher (Admin)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [201 Created, 280B, 440ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [201 Created, 280B, 467ms]
   √  Status is 201 Created
   √  Login ID is generated (…@school.com)
   √  Temporary password has 10 characters
 
 └ Register - class already has a Class Teacher
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [409 Conflict, 208B, 237ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [409 Conflict, 208B, 187ms]
   √  Status is 409 Conflict
   √  Error message mentions "already has a Class Teacher"
 
 └ Register - invalid email
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [400 Bad Request, 206B, 186ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [400 Bad Request, 206B, 204ms]
   √  Status is 400 Bad Request
   √  Error message mentions "valid email"
 
 └ Register - Principal/VP cannot teach subjects
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [400 Bad Request, 227B, 191ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [400 Bad Request, 227B, 216ms]
   √  Status is 400 Bad Request
   √  Message: Only a Teacher
 
 └ Register - same subject + class picked twice
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [400 Bad Request, 213B, 288ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [400 Bad Request, 213B, 182ms]
   √  Status is 400 Bad Request
   √  Message: picked twice
 
 └ Register - by a Teacher (not allowed)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [403 Forbidden, 204B, 186ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [403 Forbidden, 204B, 181ms]
   √  Status is 403 Forbidden
   √  Error message mentions "Only the Admin"
 
 └ Register - without a token
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [401 Unauthorized, 128B, 254ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [401 Unauthorized, 128B, 221ms]
   √  Status is 401 Unauthorized
 
 └ Login - new Teacher with temporary password
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 927B, 432ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 927B, 418ms]
   √  Status is 200 OK
   √  Must change password is true
 
 └ New Teacher - blocked until password is changed
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [403 Forbidden, 213B, 184ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [403 Forbidden, 213B, 179ms]
   √  Status is 403 Forbidden
   √  Error message mentions "change your temporary password"
 
 └ Change password - too weak
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/change-password [400 Bad Request, 228B, 346ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/change-password [400 Bad Request, 228B, 333ms]
   √  Status is 400 Bad Request
   √  Error message mentions "one letter and one number"
 
 └ Change password - wrong current password
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/change-password [400 Bad Request, 201B, 418ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/change-password [400 Bad Request, 201B, 339ms]
   √  Status is 400 Bad Request
   √  Error message mentions "Current password is incorrect"
 
 └ Change password - success
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/change-password [200 OK, 353B, 551ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/change-password [200 OK, 353B, 557ms]
   √  Status is 200 OK
   √  Must change password is now false
 
 └ New Teacher - now allowed in
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [200 OK, 150B, 211ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [200 OK, 150B, 218ms]
   √  Status is 200 OK
   √  Returns a list
 
 □ 3. Users & password reset (Admin)
 └ Users - list (Admin)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/users [200 OK, 1.5kB, 246ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/users [200 OK, 1.5kB, 212ms]
   √  Status is 200 OK
   √  Response time under 3 seconds
   √  At least the 6 demo users
@@ -143,369 +143,369 @@ School Grading API
   √  New Teacher is in the list
 
 └ Users - list as Principal/VP (not allowed)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/users [403 Forbidden, 202B, 220ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/users [403 Forbidden, 202B, 221ms]
   √  Status is 403 Forbidden
 
 └ Users - list without a token
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/users [401 Unauthorized, 128B, 212ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/users [401 Unauthorized, 128B, 173ms]
   √  Status is 401 Unauthorized
 
 └ Reset password - Admin resets the new Teacher
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/reset-password/7 [200 OK, 275B, 424ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/reset-password/7 [200 OK, 275B, 469ms]
   √  Status is 200 OK
   √  A new temporary password is returned
 
 └ Login - old password stops working after reset
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [401 Unauthorized, 201B, 399ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [401 Unauthorized, 201B, 330ms]
   √  Status is 401 Unauthorized
 
 └ Reset password - own account (not allowed)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/reset-password/1 [400 Bad Request, 212B, 188ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/reset-password/1 [400 Bad Request, 212B, 226ms]
   √  Status is 400 Bad Request
   √  Error message mentions "Change Password"
 
 └ Reset password - user not found
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/reset-password/99999 [404 Not Found, 184B, 187ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/reset-password/99999 [404 Not Found, 184B, 231ms]
   √  Status is 404 Not Found
 
 □ 4. Classes, tracker & students
 └ Overview - Admin
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [200 OK, 4.4kB, 312ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [200 OK, 4.4kB, 230ms]
   √  Status is 200 OK
   √  Response time under 3 seconds
   √  5 sections
   √  Each class has 5 subjects
 
 └ Overview - Teacher (not allowed)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [403 Forbidden, 221B, 184ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [403 Forbidden, 221B, 221ms]
   √  Status is 403 Forbidden
 
 └ Tracker 8-B - Class Teacher Sania
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/tracker [200 OK, 3.41kB, 261ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/tracker [200 OK, 3.41kB, 214ms]
   √  Status is 200 OK
   √  Tracker lists the 5 subjects
   √  Each subject shows its teacher and progress
 
 └ Tracker 8-B - result card readiness per student
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/tracker [200 OK, 3.41kB, 220ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/tracker [200 OK, 3.41kB, 222ms]
   √  Status is 200 OK
   √  One readiness line per student
   √  A waiting card names the subject AND the teacher
   √  A ready card waits for nothing
 
 └ Tracker 9-A - not her class
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/3/tracker [403 Forbidden, 221B, 304ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/3/tracker [403 Forbidden, 221B, 188ms]
   √  Status is 403 Forbidden
   √  Error message mentions "Only the Class Teacher"
 
 └ Tracker - class not found
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/999/tracker [404 Not Found, 185B, 225ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/999/tracker [404 Not Found, 185B, 269ms]
   √  Status is 404 Not Found
 
 └ Publish 8-B - subjects still pending
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/publish [409 Conflict, 226B, 333ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/publish [409 Conflict, 226B, 309ms]
   √  Status is 409 Conflict
   √  Error message mentions "Still waiting for"
 
 └ Students of 8-B
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/students [200 OK, 491B, 240ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/students [200 OK, 491B, 180ms]
   √  Status is 200 OK
   √  At least 5 students
 
 └ Add student to 8-B
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/students [201 Created, 211B, 291ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/students [201 Created, 211B, 287ms]
   √  Status is 201 Created
   √  Roll number is padded to 06
 
 └ Add student - duplicate roll number
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/students [409 Conflict, 213B, 249ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/students [409 Conflict, 213B, 222ms]
   √  Status is 409 Conflict
   √  Error message mentions "already exists"
 
 └ Add student - empty name
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/students [400 Bad Request, 205B, 222ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/students [400 Bad Request, 205B, 189ms]
   √  Status is 400 Bad Request
   √  Error message mentions "required"
 
 └ Add student - 11-character numeric roll (00000000089)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/students [400 Bad Request, 212B, 196ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/students [400 Bad Request, 212B, 242ms]
   √  Status is 400 Bad Request
   √  Message says roll number is too long
 
 └ Add student - negative roll number
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/students [400 Bad Request, 202B, 188ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/students [400 Bad Request, 202B, 220ms]
   √  Status is 400 Bad Request
   √  Message says roll number cannot be negative
 
 └ Students of 8-A - Subject Teacher (not allowed)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/1/students [403 Forbidden, 251B, 377ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/1/students [403 Forbidden, 251B, 217ms]
   √  Status is 403 Forbidden
   √  Only the Class Teacher or Admin
 
 └ Add student to 8-A - Subject Teacher (not allowed)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/1/students [403 Forbidden, 251B, 208ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/1/students [403 Forbidden, 251B, 223ms]
   √  Status is 403 Forbidden
 
 └ Tracker 8-B - submissions cleared after adding a student
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/tracker [200 OK, 5.25kB, 234ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/tracker [200 OK, 5.25kB, 221ms]
   √  Status is 200 OK
   √  No subject is "submitted" any more
 
 □ 5. Marks upload & update
 └ My subjects - Teacher Sania
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [200 OK, 1.99kB, 312ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [200 OK, 1.99kB, 316ms]
   √  Status is 200 OK
   √  Sania teaches 10 class-subjects
 
 └ My subjects - Admin (not a teacher)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [403 Forbidden, 197B, 240ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [403 Forbidden, 197B, 217ms]
   √  Status is 403 Forbidden
   √  Error message mentions "Only teachers"
 
 └ Marks of 8-B Chemistry
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/9/marks [200 OK, 783B, 236ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/9/marks [200 OK, 783B, 205ms]
   √  Status is 200 OK
   √  Max marks is 60
 
 └ Save marks - above the maximum (61/60)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/9/marks [400 Bad Request, 202B, 205ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/9/marks [400 Bad Request, 202B, 235ms]
   √  Status is 400 Bad Request
   √  Error message mentions "between 0 and 60"
 
 └ Submit marks - one student still empty
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/9/marks [400 Bad Request, 236B, 252ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/9/marks [400 Bad Request, 236B, 237ms]
   √  Status is 400 Bad Request
   √  Error message mentions "cannot submit"
 
 └ Submit marks - every student (success)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/9/marks [200 OK, 178B, 232ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/9/marks [200 OK, 178B, 270ms]
   √  Status is 200 OK
   √  Says submitted
 
 └ Marks of another teacher's subject
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/1/marks [403 Forbidden, 211B, 271ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/1/marks [403 Forbidden, 211B, 272ms]
   √  Status is 403 Forbidden
   √  Error message mentions "not assigned to you"
 
 □ 6. Result cards & delete student
 └ Result card - Sarah (complete)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/students/6/report-card [200 OK, 715B, 203ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/students/6/report-card [200 OK, 715B, 954ms]
   √  Status is 200 OK
   √  Complete card has a percentage and a grade
   √  Total is out of 380
   √  Class Teacher of 8-B may print / save PDF
 
 └ Result card - Ahmed (Physics still pending)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/students/7/report-card [200 OK, 719B, 276ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/students/7/report-card [200 OK, 719B, 184ms]
   √  Status is 200 OK
   √  Incomplete card has no grade yet
   √  Principal/VP can view but not print
 
 └ Result card - teacher of another class (not allowed)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/students/6/report-card [403 Forbidden, 221B, 323ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/students/6/report-card [403 Forbidden, 221B, 255ms]
   √  Status is 403 Forbidden
 
 └ Delete student in 8-A - Subject Teacher (not allowed)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/students/1 [403 Forbidden, 251B, 425ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/students/1 [403 Forbidden, 251B, 216ms]
   √  Status is 403 Forbidden
 
 └ Delete student - the one added earlier
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/students/26 [200 OK, 267B, 578ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/students/26 [200 OK, 267B, 223ms]
   √  Status is 200 OK
   √  Message names the class and the Class Teacher
   √  Says the student is removed from all subjects
 
 └ Marks of 8-B Chemistry - removal notice for subject teachers
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/9/marks [200 OK, 935B, 589ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/9/marks [200 OK, 932B, 322ms]
   √  Status is 200 OK
   √  Deleted student is gone from the marks list
   √  Notice says the Class Teacher removed the student
 
 └ Delete student - not found
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/students/99999 [404 Not Found, 187B, 272ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/students/99999 [404 Not Found, 187B, 218ms]
   √  Status is 404 Not Found
 
 □ 7. Publish & lock results
 └ Publish 9-A - Class Teacher Maryam
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/3/publish [200 OK, 180B, 468ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/3/publish [200 OK, 180B, 238ms]
   √  Status is 200 OK
   √  Error message mentions "published"
 
 └ Overview - Cards Ready now counts 9-A
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [200 OK, 4.4kB, 333ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [200 OK, 4.4kB, 213ms]
   √  Status is 200 OK
   √  Cards Ready is at least 5
 
 └ Add student to locked 9-A
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/3/students [409 Conflict, 222B, 239ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/3/students [409 Conflict, 222B, 186ms]
   √  Status is 409 Conflict
   √  Error message mentions "published"
 
 └ Save marks in locked 9-A
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/12/marks [409 Conflict, 223B, 238ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/12/marks [409 Conflict, 223B, 259ms]
   √  Status is 409 Conflict
   √  Error message mentions "locked"
 
 └ Publish 9-A - not the Class Teacher
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/3/publish [403 Forbidden, 212B, 367ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/3/publish [403 Forbidden, 212B, 188ms]
   √  Status is 403 Forbidden
 
 └ Unpublish 9-A - Maryam (unlock again)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/3/publish [200 OK, 182B, 505ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/3/publish [200 OK, 182B, 243ms]
   √  Status is 200 OK
   √  Error message mentions "unpublished"
 
 □ 8. Admin - classes & teachers
 └ Subjects - list (Admin)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/subjects [200 OK, 432B, 408ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/subjects [200 OK, 432B, 218ms]
   √  Status is 200 OK
   √  5 subjects
 
 └ Create class - by a Teacher (not allowed)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes [403 Forbidden, 203B, 249ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes [403 Forbidden, 203B, 181ms]
   √  Status is 403 Forbidden
 
 └ Create class - Admin (Class 10 + subject teachers)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes [201 Created, 573B, 623ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes [201 Created, 573B, 528ms]
   √  Status is 201 Created
   √  Class name and section saved
   √  English -> Ahsan, Chemistry -> Sania
   √  No Class Teacher yet
 
 └ Create class - duplicate name (409)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes [409 Conflict, 200B, 306ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes [409 Conflict, 200B, 229ms]
   √  Status is 409 Conflict
   √  Message says it already exists
 
 └ Create class - section missing (400)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes [400 Bad Request, 237B, 319ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes [400 Bad Request, 237B, 219ms]
   √  Status is 400 Bad Request
 
 └ Create class - teacher already leads another class (409)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes [409 Conflict, 226B, 401ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes [409 Conflict, 226B, 227ms]
   √  Status is 409 Conflict
   √  Says Sania already leads 8-B
 
 └ Assign teachers - Admin (Class Teacher + change subjects)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/6/assignments [200 OK, 583B, 774ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/6/assignments [200 OK, 583B, 321ms]
   √  Status is 200 OK
   √  New teacher is now the Class Teacher
   √  Maths added (Maryam), Chemistry removed
 
 └ Assign teachers - by a Teacher (not allowed)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/6/assignments [403 Forbidden, 215B, 294ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/6/assignments [403 Forbidden, 215B, 220ms]
   √  Status is 403 Forbidden
 
 └ Assign teachers - class not found (404)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/99999/assignments [404 Not Found, 185B, 277ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/99999/assignments [404 Not Found, 185B, 195ms]
   √  Status is 404 Not Found
 
 └ Assign teachers - remove a subject that has marks (409)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/assignments [409 Conflict, 234B, 395ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/assignments [409 Conflict, 234B, 236ms]
   √  Status is 409 Conflict
   √  Says the subject already has marks
 
 └ Tracker 8-B - unchanged after the refused change
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/tracker [200 OK, 4.24kB, 346ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/tracker [200 OK, 4.24kB, 198ms]
   √  Status is 200 OK
   √  Sania is still Class Teacher and English is still taught
 
 └ Edit class - Admin renames it and adds Physics (PUT /classes/{id})
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/6 [200 OK, 719B, 883ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/6 [200 OK, 719B, 250ms]
   √  Status is 200 OK
   √  Renamed to Class 11
   √  Physics added with Teacher Usman
   √  Other subjects kept
 
 └ Edit class - name already used by another class (409)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/6 [409 Conflict, 195B, 1048ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/6 [409 Conflict, 195B, 189ms]
   √  Status is 409 Conflict
   √  Message: already exists
 
 └ Edit class - by a Teacher (not allowed)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/6 [403 Forbidden, 201B, 425ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/6 [403 Forbidden, 201B, 267ms]
   √  Status is 403 Forbidden
 
 └ Edit user - Admin edits the new Teacher (PUT /users/{id})
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/users/7 [200 OK, 373B, 812ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/users/7 [200 OK, 373B, 315ms]
   √  Status is 200 OK
   √  Name changed, Login ID unchanged
   √  Still Class Teacher of the new class
 
 └ Overview - the new class shows Ali's subjects
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [200 OK, 5.13kB, 360ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [200 OK, 5.13kB, 212ms]
   √  Status is 200 OK
   √  Physics and Biology are taught by Ali
 
 └ Edit user - take away subjects that have marks (409)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/users/3 [409 Conflict, 312B, 481ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/users/3 [409 Conflict, 312B, 222ms]
   √  Status is 409 Conflict
   √  Message: already has marks
 
 └ Edit user - class already has a Class Teacher (409)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/users/7 [409 Conflict, 208B, 442ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/users/7 [409 Conflict, 208B, 317ms]
   √  Status is 409 Conflict
   √  Message: already has a Class Teacher
 
 └ Edit user - the Admin account (400)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/users/1 [400 Bad Request, 211B, 288ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/users/1 [400 Bad Request, 211B, 229ms]
   √  Status is 400 Bad Request
 
 └ Edit user - by a Teacher (not allowed)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/users/7 [403 Forbidden, 202B, 234ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/users/7 [403 Forbidden, 202B, 220ms]
   √  Status is 403 Forbidden
 
 └ Tracker 8-B - Sania still teaches her subjects
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/tracker [200 OK, 4.24kB, 299ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/tracker [200 OK, 4.24kB, 197ms]
   √  Status is 200 OK
   √  Chemistry and Biology still Teacher Sania
 
 □ 9. Admin - subjects
 └ Create subject - Admin
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/subjects [201 Created, 222B, 391ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/subjects [201 Created, 222B, 227ms]
   √  Status is 201 Created
   √  Saved with its maximum marks
 
 └ Create subject - same name in CAPITALS (409)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/subjects [409 Conflict, 222B, 240ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/subjects [409 Conflict, 222B, 244ms]
   √  Status is 409 Conflict
   √  Message: already exists
 
 └ Create subject - empty name (400)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/subjects [400 Bad Request, 196B, 386ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/subjects [400 Bad Request, 196B, 182ms]
   √  Status is 400 Bad Request
   √  Message: required
 
 └ Create subject - maximum marks 0 (400)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/subjects [400 Bad Request, 212B, 251ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/subjects [400 Bad Request, 212B, 260ms]
   √  Status is 400 Bad Request
   √  Message: between 1 and 1000
 
 └ Create subject - by a Teacher (not allowed)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/subjects [403 Forbidden, 201B, 194ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/subjects [403 Forbidden, 201B, 220ms]
   √  Status is 403 Forbidden
 
 └ Edit subject - rename and change max marks (PUT)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/subjects/6 [200 OK, 225B, 334ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/subjects/6 [200 OK, 225B, 215ms]
   √  Status is 200 OK
   √  Renamed, out of 75
 
 └ Edit subject - rename to an existing subject (409)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/subjects/6 [409 Conflict, 208B, 215ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/subjects/6 [409 Conflict, 208B, 217ms]
   √  Status is 409 Conflict
   √  Message: A subject called English already exists
 
 └ Edit subject - max below a mark already given (409)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/subjects/1 [409 Conflict, 250B, 231ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/subjects/1 [409 Conflict, 250B, 226ms]
   √  Status is 409 Conflict
   √  Message: cannot be lower than
 
 └ Edit subject - not found (404)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/subjects/99999 [404 Not Found, 187B, 223ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/subjects/99999 [404 Not Found, 187B, 221ms]
   √  Status is 404 Not Found
 
 └ Edit subject - by a Teacher (not allowed)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/subjects/6 [403 Forbidden, 202B, 213ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/subjects/6 [403 Forbidden, 202B, 181ms]
   √  Status is 403 Forbidden
 
 └ Delete subject - taught in classes (409)
@@ -514,281 +514,281 @@ School Grading API
   √  Message: is taught in
 
 └ Delete subject - by a Teacher (not allowed)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/subjects/6 [403 Forbidden, 204B, 181ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/subjects/6 [403 Forbidden, 204B, 176ms]
   √  Status is 403 Forbidden
 
 └ Delete subject - unused subject (200)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/subjects/6 [200 OK, 205B, 228ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/subjects/6 [200 OK, 205B, 222ms]
   √  Status is 200 OK
   √  Message: was deleted
 
 └ Subjects - back to the 5 school subjects
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/subjects [200 OK, 432B, 243ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/subjects [200 OK, 432B, 542ms]
   √  Status is 200 OK
   √  5 subjects
 
 □ 10. Admin - soft & hard delete
 └ Register - a Teacher to delete (Admin)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [201 Created, 281B, 467ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [201 Created, 281B, 380ms]
   √  Status is 201 Created
 
 └ Login - the Teacher to delete
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 924B, 382ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 924B, 880ms]
   √  Status is 200 OK
 
 └ SoftDeleteById user - by a Teacher (not allowed)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/SoftDeleteById?id=8 [403 Forbidden, 204B, 182ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/SoftDeleteById?id=8 [403 Forbidden, 204B, 227ms]
   √  Status is 403 Forbidden
 
 └ SoftDeleteById user - own Admin account (400)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/SoftDeleteById?id=1 [400 Bad Request, 206B, 189ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/SoftDeleteById?id=1 [400 Bad Request, 206B, 196ms]
   √  Status is 400 Bad Request
   √  Message mentions "your own account"
 
 └ SoftDeleteById user - Teacher who still has a class + subjects (409)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/SoftDeleteById?id=3 [409 Conflict, 273B, 200ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/SoftDeleteById?id=3 [409 Conflict, 273B, 218ms]
   √  Status is 409 Conflict
   √  Message mentions "Class Teacher of Class 8 - B"
 
 └ SoftDeleteById user - not found (404)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/SoftDeleteById?id=99999 [404 Not Found, 184B, 187ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/SoftDeleteById?id=99999 [404 Not Found, 184B, 181ms]
   √  Status is 404 Not Found
 
 └ SoftDeleteById user - Admin deletes the Teacher (200)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/SoftDeleteById?id=8 [200 OK, 187B, 211ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/SoftDeleteById?id=8 [200 OK, 187B, 253ms]
   √  Status is 200 OK
   √  Message mentions "was deleted"
 
 └ Users - list no longer shows the deleted Teacher
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/users [200 OK, 1.52kB, 280ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/users [200 OK, 1.52kB, 226ms]
   √  Status is 200 OK
   √  Deleted Teacher is hidden
   √  Sania is still listed
 
 └ Login - deleted Teacher cannot log in (401)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [401 Unauthorized, 201B, 180ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [401 Unauthorized, 201B, 207ms]
   √  Status is 401 Unauthorized
   √  No token is given
 
 └ Old token of the deleted Teacher stops working (401)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [401 Unauthorized, 192B, 269ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [401 Unauthorized, 192B, 229ms]
   √  Status is 401 Unauthorized
 
 └ SoftDeleteById user - already deleted (404)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/SoftDeleteById?id=8 [404 Not Found, 184B, 318ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/SoftDeleteById?id=8 [404 Not Found, 184B, 220ms]
   √  Status is 404 Not Found
 
 └ GetDeleted users - Admin sees the deleted Teacher
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/users/GetDeleted [200 OK, 355B, 194ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/users/GetDeleted [200 OK, 355B, 227ms]
   √  Status is 200 OK
   √  Still stored in the database
 
 └ GetDeleted users - by a Teacher (not allowed)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/users/GetDeleted [403 Forbidden, 209B, 234ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/users/GetDeleted [403 Forbidden, 209B, 215ms]
   √  Status is 403 Forbidden
 
 └ RestoreById user - Admin restores the Teacher (200)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/users/RestoreById?id=8 [200 OK, 209B, 221ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/users/RestoreById?id=8 [200 OK, 209B, 225ms]
   √  Status is 200 OK
   √  Message mentions "was restored"
 
 └ Users - restored Teacher is listed again
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/users [200 OK, 1.73kB, 213ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/users [200 OK, 1.73kB, 207ms]
   √  Status is 200 OK
   √  Restored Teacher is back
 
 └ Login - restored Teacher can log in again
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 923B, 421ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 924B, 435ms]
   √  Status is 200 OK
 
 └ RestoreById user - not deleted (400)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/users/RestoreById?id=8 [400 Bad Request, 199B, 184ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/users/RestoreById?id=8 [400 Bad Request, 199B, 223ms]
   √  Status is 400 Bad Request
   √  Message mentions "is not deleted"
 
 └ RestoreById user - by a Teacher (not allowed)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/users/RestoreById?id=8 [403 Forbidden, 205B, 259ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/users/RestoreById?id=8 [403 Forbidden, 205B, 218ms]
   √  Status is 403 Forbidden
 
 └ HardDeleteById user - by a Teacher (not allowed)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/HardDeleteById?id=8 [403 Forbidden, 216B, 189ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/HardDeleteById?id=8 [403 Forbidden, 216B, 180ms]
   √  Status is 403 Forbidden
 
 └ HardDeleteById user - Teacher with marks and subjects (409)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/HardDeleteById?id=3 [409 Conflict, 337B, 241ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/HardDeleteById?id=3 [409 Conflict, 337B, 255ms]
   √  Status is 409 Conflict
   √  Message mentions "Keep the account soft-deleted"
 
 └ HardDeleteById user - own Admin account (400)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/HardDeleteById?id=1 [400 Bad Request, 206B, 226ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/HardDeleteById?id=1 [400 Bad Request, 206B, 219ms]
   √  Status is 400 Bad Request
   √  Message mentions "your own account"
 
 └ SoftDeleteById user - delete the Teacher again
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/SoftDeleteById?id=8 [200 OK, 187B, 305ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/SoftDeleteById?id=8 [200 OK, 187B, 198ms]
   √  Status is 200 OK
 
 └ HardDeleteById user - Admin removes the Teacher for ever (200)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/HardDeleteById?id=8 [200 OK, 199B, 318ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/HardDeleteById?id=8 [200 OK, 199B, 235ms]
   √  Status is 200 OK
   √  Message mentions "permanently deleted"
 
 └ GetDeleted users - gone for ever after the hard delete
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/users/GetDeleted [200 OK, 150B, 191ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/users/GetDeleted [200 OK, 150B, 213ms]
   √  Status is 200 OK
   √  Not in the database any more
 
 └ HardDeleteById user - already gone (404)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/HardDeleteById?id=8 [404 Not Found, 184B, 236ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/HardDeleteById?id=8 [404 Not Found, 184B, 224ms]
   √  Status is 404 Not Found
 
 └ Create class - a class to delete (Chemistry -> Sania)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes [201 Created, 435B, 263ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes [201 Created, 435B, 232ms]
   √  Status is 201 Created
 
 └ Add student to the class to delete
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/7/students [201 Created, 214B, 323ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes/7/students [201 Created, 214B, 242ms]
   √  Status is 201 Created
 
 └ My subjects - Sania sees the new class
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [200 OK, 2.19kB, 324ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [200 OK, 2.19kB, 321ms]
   √  Status is 200 OK
   √  New class is in her list
 
 └ SoftDeleteById class - by a Teacher (not allowed)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/classes/SoftDeleteById?id=7 [403 Forbidden, 203B, 198ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/classes/SoftDeleteById?id=7 [403 Forbidden, 203B, 238ms]
   √  Status is 403 Forbidden
 
 └ SoftDeleteById class - not found (404)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/classes/SoftDeleteById?id=99999 [404 Not Found, 185B, 263ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/classes/SoftDeleteById?id=99999 [404 Not Found, 185B, 215ms]
   √  Status is 404 Not Found
 
 └ SoftDeleteById class - Admin deletes the class (200)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/classes/SoftDeleteById?id=7 [200 OK, 239B, 224ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/classes/SoftDeleteById?id=7 [200 OK, 239B, 227ms]
   √  Status is 200 OK
   √  Message mentions "students and marks are kept"
 
 └ Overview - deleted class is hidden
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [200 OK, 5.13kB, 230ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [200 OK, 5.13kB, 194ms]
   √  Status is 200 OK
   √  Deleted class is not listed
 
 └ My subjects - Sania no longer sees the deleted class
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [200 OK, 2.01kB, 358ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/mine [200 OK, 2.01kB, 279ms]
   √  Status is 200 OK
   √  Deleted class left her list
 
 └ Tracker - deleted class (404)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/7/tracker [404 Not Found, 185B, 196ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/7/tracker [404 Not Found, 185B, 226ms]
   √  Status is 404 Not Found
 
 └ Result card - student of the deleted class (404)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/students/27/report-card [404 Not Found, 187B, 234ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/students/27/report-card [404 Not Found, 187B, 182ms]
   √  Status is 404 Not Found
 
 └ Create class - same name as the deleted class (409)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes [409 Conflict, 305B, 226ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/classes [409 Conflict, 305B, 253ms]
   √  Status is 409 Conflict
   √  Message mentions "was deleted earlier"
 
 └ GetDeleted classes - Admin sees the deleted class
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/GetDeleted [200 OK, 432B, 229ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/GetDeleted [200 OK, 432B, 218ms]
   √  Status is 200 OK
   √  Still stored with its student and subject
 
 └ GetDeleted classes - by a Teacher (not allowed)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/GetDeleted [403 Forbidden, 208B, 222ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/GetDeleted [403 Forbidden, 208B, 179ms]
   √  Status is 403 Forbidden
 
 └ RestoreById class - Admin restores the class (200)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/RestoreById?id=7 [200 OK, 240B, 286ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/RestoreById?id=7 [200 OK, 240B, 284ms]
   √  Status is 200 OK
   √  Message mentions "was restored"
 
 └ Overview - restored class is listed again
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [200 OK, 5.42kB, 202ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [200 OK, 5.42kB, 218ms]
   √  Status is 200 OK
   √  Restored class is back
 
 └ RestoreById class - not deleted (400)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/RestoreById?id=7 [400 Bad Request, 202B, 242ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/RestoreById?id=7 [400 Bad Request, 202B, 212ms]
   √  Status is 400 Bad Request
   √  Message mentions "is not deleted"
 
 └ HardDeleteById class - by a Teacher (not allowed)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/classes/HardDeleteById?id=7 [403 Forbidden, 215B, 194ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/classes/HardDeleteById?id=7 [403 Forbidden, 215B, 178ms]
   √  Status is 403 Forbidden
 
 └ HardDeleteById class - 8-B has marks (409)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/classes/HardDeleteById?id=2 [409 Conflict, 270B, 204ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/classes/HardDeleteById?id=2 [409 Conflict, 270B, 261ms]
   √  Status is 409 Conflict
   √  Message mentions "keep it soft-deleted"
 
 └ Tracker 8-B - still there after the refused hard delete
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/tracker [200 OK, 4.24kB, 256ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/2/tracker [200 OK, 4.24kB, 223ms]
   √  Status is 200 OK
 
 └ HardDeleteById class - Admin removes the class for ever (200)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/classes/HardDeleteById?id=7 [200 OK, 202B, 245ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/classes/HardDeleteById?id=7 [200 OK, 202B, 213ms]
   √  Status is 200 OK
   √  Message mentions "permanently deleted"
 
 └ GetDeleted classes - gone for ever after the hard delete
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/GetDeleted [200 OK, 150B, 242ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes/GetDeleted [200 OK, 150B, 230ms]
   √  Status is 200 OK
   √  Not in the database any more
 
 └ HardDeleteById class - already gone (404)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/classes/HardDeleteById?id=7 [404 Not Found, 185B, 293ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/classes/HardDeleteById?id=7 [404 Not Found, 185B, 223ms]
   √  Status is 404 Not Found
 
 □ 11. Result Date & notifications
 └ Login - Teacher Usman (Physics, Class Teacher of 9-B)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 916B, 401ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 916B, 353ms]
   √  Status is 200 OK
 
 └ Login - Teacher Ahsan (teaches English in 8-B)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 916B, 682ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 916B, 356ms]
   √  Status is 200 OK
 
 └ Result Date - Teacher can view it
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [200 OK, 247B, 208ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [200 OK, 247B, 605ms]
   √  Status is 200 OK
   √  Has the school's today
   √  Has resultDate + daysRemaining
 
 └ Result Date - without a token (401)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [401 Unauthorized, 128B, 181ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [401 Unauthorized, 128B, 293ms]
   √  Status is 401 Unauthorized
 
 └ Set Result Date - by a Teacher (not allowed)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [403 Forbidden, 217B, 251ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [403 Forbidden, 217B, 226ms]
   √  Status is 403 Forbidden
   √  Message mentions "Only the Principal / VP"
 
 └ Set Result Date - by the Admin (not allowed)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [403 Forbidden, 217B, 213ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [403 Forbidden, 217B, 178ms]
   √  Status is 403 Forbidden
   √  Message mentions "Only the Principal / VP"
 
 └ Set Result Date - date in the past (400)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [400 Bad Request, 209B, 190ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [400 Bad Request, 209B, 278ms]
   √  Status is 400 Bad Request
   √  Message mentions "cannot be in the past"
 
 └ Set Result Date - VP sets it 7 days ahead (200)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [200 OK, 284B, 247ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [200 OK, 283B, 241ms]
   √  Status is 200 OK
   √  7 days remaining
   √  Saved by VP Sarah
 
 └ Result Date - Teacher sees the new date
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [200 OK, 282B, 196ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [200 OK, 282B, 215ms]
   √  Status is 200 OK
   √  7 days remaining
 
 └ Notifications - 7 days left: deadline_one_week for Usman
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 587B, 268ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 587B, 241ms]
   √  Status is 200 OK
   √  daysRemaining is 7
   √  Exactly one deadline_one_week for today
@@ -797,17 +797,17 @@ School Grading API
   √  Automatic = no sender
 
 └ Notifications - again: no duplicate one-week reminder
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 585B, 237ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 585B, 220ms]
   √  Status is 200 OK
   √  Still exactly one deadline_one_week today (no duplicate)
 
 └ Set Result Date - VP moves it to 4 days ahead
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [200 OK, 284B, 279ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [200 OK, 284B, 212ms]
   √  Status is 200 OK
   √  4 days remaining
 
 └ Notifications - 4 days left: deadline_daily for Usman
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 945B, 292ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 945B, 223ms]
   √  Status is 200 OK
   √  daysRemaining is 4
   √  Exactly one deadline_daily for today
@@ -816,12 +816,12 @@ School Grading API
   √  Automatic = no sender
 
 └ Set Result Date - VP moves it to 2 days ahead
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [200 OK, 284B, 212ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [200 OK, 284B, 215ms]
   √  Status is 200 OK
   √  2 days remaining
 
 └ Notifications - 2 days left: URGENT deadline_urgent for Usman
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 1.33kB, 282ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 1.33kB, 244ms]
   √  Status is 200 OK
   √  daysRemaining is 2
   √  Exactly one deadline_urgent for today
@@ -831,29 +831,29 @@ School Grading API
   √  Mentions Physics
 
 └ Notifications - again: no duplicate urgent reminder
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 1.33kB, 315ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 1.33kB, 238ms]
   √  Status is 200 OK
   √  Still exactly one deadline_urgent today (no duplicate)
 
 └ Notifications - VP gets no deadline reminders
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 220B, 231ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 220B, 315ms]
   √  Status is 200 OK
   √  No deadline_* items
 
 └ Register - Notice Teacher with ONE subject (Biology 9-C)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [201 Created, 287B, 530ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/register [201 Created, 287B, 722ms]
   √  Status is 201 Created
 
 └ Login - Notice Teacher (temporary password)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 935B, 628ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/login [200 OK, 935B, 408ms]
   √  Status is 200 OK
 
 └ Change password - Notice Teacher
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/change-password [200 OK, 360B, 836ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/auth/change-password [200 OK, 360B, 581ms]
   √  Status is 200 OK
 
 └ Notifications - Notice Teacher has a pending subject: urgent reminder
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 569B, 318ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 569B, 317ms]
   √  Status is 200 OK
   √  daysRemaining is 2
   √  Exactly one deadline_urgent for today
@@ -862,81 +862,81 @@ School Grading API
   √  Automatic = no sender
 
 └ Marks of Biology 9-C (Notice Teacher)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/25/marks [200 OK, 716B, 322ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/25/marks [200 OK, 716B, 208ms]
   √  Status is 200 OK
   √  Class has students
 
 └ Submit marks - Notice Teacher submits ALL marks
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/25/marks [200 OK, 178B, 325ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/25/marks [200 OK, 178B, 306ms]
   √  Status is 200 OK
   √  Message mentions "Marks submitted"
 
 └ Notifications - after the final submit: no unread deadline reminders
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 566B, 255ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 566B, 400ms]
   √  Status is 200 OK
   √  All deadline_* reminders are read
   √  Unread count is 0
 
 └ Set Result Date - VP moves it to 5 days ahead
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [200 OK, 284B, 288ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [200 OK, 284B, 312ms]
   √  Status is 200 OK
   √  5 days remaining
 
 └ Notifications - everything submitted: 0 new deadline reminders
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 566B, 287ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 566B, 356ms]
   √  Status is 200 OK
   √  No deadline_daily created (strict suppression)
   √  No unread deadline reminders
 
 └ Remind - Class Teacher Sania nudges Usman for Physics 8-B (201)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [201 Created, 217B, 213ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [201 Created, 217B, 258ms]
   √  Status is 201 Created
   √  Message mentions "Reminder sent to Teacher Usman for Physics"
 
 └ Remind - same subject again while unread (429)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [429 Too Many Requests, 272B, 277ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [429 Too Many Requests, 272B, 228ms]
   √  Status is 429 Too Many Requests
   √  Message mentions "has not read it yet"
 
 └ Marks of English 8-B (Ahsan)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/6/marks [200 OK, 910B, 325ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/assignments/6/marks [200 OK, 909B, 324ms]
   √  Status is 200 OK
   √  Every student has a mark
 
 └ Submit marks - Ahsan submits English 8-B
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/6/marks [200 OK, 178B, 221ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/6/marks [200 OK, 178B, 251ms]
   √  Status is 200 OK
   √  Message mentions "Marks submitted"
 
 └ Remind - subject already submitted (409)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [409 Conflict, 214B, 206ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [409 Conflict, 214B, 291ms]
   √  Status is 409 Conflict
   √  Message mentions "Marks for English have already been submitted"
 
 └ Remind - own subject (400)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [400 Bad Request, 216B, 205ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [400 Bad Request, 216B, 235ms]
   √  Status is 400 Bad Request
   √  Message mentions "your own subject"
 
 └ Remind - Class Teacher of ANOTHER class (403)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [403 Forbidden, 243B, 232ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [403 Forbidden, 243B, 221ms]
   √  Status is 403 Forbidden
   √  Message mentions "Only the Class Teacher of Class 8 - B"
 
 └ Remind - subject teacher of that class (403)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [403 Forbidden, 243B, 190ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [403 Forbidden, 243B, 279ms]
   √  Status is 403 Forbidden
 
 └ Remind - by the VP (403)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [403 Forbidden, 243B, 257ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [403 Forbidden, 243B, 224ms]
   √  Status is 403 Forbidden
 
 └ Remind - by the Admin (403)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [403 Forbidden, 243B, 232ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [403 Forbidden, 243B, 220ms]
   √  Status is 403 Forbidden
 
 └ Remind - assignment not found (404)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [404 Not Found, 190B, 197ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [404 Not Found, 190B, 183ms]
   √  Status is 404 Not Found
 
 └ Notifications - Usman receives the Class Teacher reminder
@@ -951,87 +951,87 @@ School Grading API
   √  Newest first
 
 └ Mark as read - someone else's notification (404)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/notifications/5/read [404 Not Found, 192B, 289ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/notifications/5/read [404 Not Found, 192B, 207ms]
   √  Status is 404 Not Found
 
 └ Mark as read - Usman reads the reminder
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/notifications/5/read [200 OK, 193B, 317ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/notifications/5/read [200 OK, 193B, 210ms]
   √  Status is 200 OK
   √  Returns the new unread count
 
 └ Notifications - the reminder is now read
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 1.71kB, 327ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 1.72kB, 220ms]
   √  Status is 200 OK
   √  isRead = true
 
 └ Remind - allowed again once the last one was read (201)
-  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [201 Created, 217B, 226ms]
+  POST https://school-grading-api-bcgi.azurewebsites.net/api/notifications/remind [201 Created, 217B, 218ms]
   √  Status is 201 Created
 
 └ Mark all read - Usman
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/notifications/read-all [200 OK, 211B, 323ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/notifications/read-all [200 OK, 211B, 264ms]
   √  Status is 200 OK
   √  Unread count 0
 
 └ Notifications - Usman has 0 unread
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 2.07kB, 232ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [200 OK, 2.07kB, 225ms]
   √  Status is 200 OK
   √  Unread count 0
 
 └ Mark as read - not found (404)
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/notifications/99999/read [404 Not Found, 192B, 221ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/notifications/99999/read [404 Not Found, 192B, 220ms]
   √  Status is 404 Not Found
 
 └ Notifications - without a token (401)
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [401 Unauthorized, 128B, 223ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/notifications [401 Unauthorized, 128B, 228ms]
   √  Status is 401 Unauthorized
 
 └ Clean up - Notice Teacher clears the Biology 9-C marks
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/25/marks [200 OK, 197B, 329ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/assignments/25/marks [200 OK, 197B, 238ms]
   √  Status is 200 OK
 
 └ Clean up - remember the Class Teacher of 9-C
-  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [200 OK, 5.13kB, 226ms]
+  GET https://school-grading-api-bcgi.azurewebsites.net/api/classes [200 OK, 5.13kB, 216ms]
   √  Status is 200 OK
   √  Class 9 - C found
 
 └ Clean up - Biology 9-C goes back to Sania
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/5/assignments [200 OK, 977B, 419ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/classes/5/assignments [200 OK, 977B, 364ms]
   √  Status is 200 OK
 
 └ Clean up - soft-delete the Notice Teacher
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/SoftDeleteById?id=9 [200 OK, 189B, 249ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/SoftDeleteById?id=9 [200 OK, 189B, 295ms]
   √  Status is 200 OK
 
 └ Clean up - hard-delete the Notice Teacher (their notifications go too)
-  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/HardDeleteById?id=9 [200 OK, 201B, 223ms]
+  DELETE https://school-grading-api-bcgi.azurewebsites.net/api/users/HardDeleteById?id=9 [200 OK, 201B, 235ms]
   √  Status is 200 OK
   √  Message mentions "permanently deleted"
 
 └ Clean up - VP clears the Result Date
-  PUT https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [200 OK, 279B, 206ms]
+  PUT https://school-grading-api-bcgi.azurewebsites.net/api/settings/result-date [200 OK, 279B, 218ms]
   √  Status is 200 OK
   √  Result Date is empty again
 
-┌─────────────────────────┬─────────────────────┬─────────────────────┐
-│                         │            executed │              failed │
-├─────────────────────────┼─────────────────────┼─────────────────────┤
-│              iterations │                   1 │                   0 │
-├─────────────────────────┼─────────────────────┼─────────────────────┤
-│                requests │                 200 │                   0 │
-├─────────────────────────┼─────────────────────┼─────────────────────┤
-│            test-scripts │                 200 │                   0 │
-├─────────────────────────┼─────────────────────┼─────────────────────┤
-│      prerequest-scripts │                  14 │                   0 │
-├─────────────────────────┼─────────────────────┼─────────────────────┤
-│              assertions │                 399 │                   0 │
-├─────────────────────────┴─────────────────────┴─────────────────────┤
-│ total run duration: 1m 18.2s                                        │
-├─────────────────────────────────────────────────────────────────────┤
-│ total data received: 99.32kB (approx)                               │
-├─────────────────────────────────────────────────────────────────────┤
-│ average response time: 305ms [min: 180ms, max: 1048ms, s.d.: 143ms] │
-└─────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────┬─────────────────────┬────────────────────┐
+│                         │            executed │             failed │
+├─────────────────────────┼─────────────────────┼────────────────────┤
+│              iterations │                   1 │                  0 │
+├─────────────────────────┼─────────────────────┼────────────────────┤
+│                requests │                 200 │                  0 │
+├─────────────────────────┼─────────────────────┼────────────────────┤
+│            test-scripts │                 200 │                  0 │
+├─────────────────────────┼─────────────────────┼────────────────────┤
+│      prerequest-scripts │                  14 │                  0 │
+├─────────────────────────┼─────────────────────┼────────────────────┤
+│              assertions │                 399 │                  0 │
+├─────────────────────────┴─────────────────────┴────────────────────┤
+│ total run duration: 1m 10.3s                                       │
+├────────────────────────────────────────────────────────────────────┤
+│ total data received: 99.31kB (approx)                              │
+├────────────────────────────────────────────────────────────────────┤
+│ average response time: 268ms [min: 173ms, max: 954ms, s.d.: 115ms] │
+└────────────────────────────────────────────────────────────────────┘
 D:\Desktop\school_grading_app\postman\..\postman\reports\azure_test_report.html: 12 token(s) redacted, 0 left
 
 Report: D:\Desktop\school_grading_app\postman\..\postman\reports\azure_test_report.html
