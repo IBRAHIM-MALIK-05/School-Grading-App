@@ -2,7 +2,7 @@
 
 | File | What it is |
 |---|---|
-| `SchoolGrading.postman_collection.json` | 148 requests in 10 folders, each with test scripts (285 checks in total) |
+| `SchoolGrading.postman_collection.json` | 200 requests in 11 folders, each with test scripts (399 checks in total) |
 | `SchoolGrading_Local.postman_environment.json` | `baseUrl = http://localhost:5080/api` |
 | `SchoolGrading_Azure.postman_environment.json` | `baseUrl = https://school-grading-api-bcgi.azurewebsites.net/api` (live cloud API) |
 | `run_tests_local.cmd` | Runs the whole collection with **Newman** against the local API and writes the HTML report |
@@ -73,11 +73,28 @@ Node.js in `tools/node` and Newman in `tools/postman-runner` – nothing is inst
    Sania's subject list, its tracker and result cards give 404, and its name cannot be reused
    (409). `GetDeleted` / `RestoreById` work like for users. `HardDeleteById` refuses 8-B (it has
    marks, 409) and removes the new class with its student and subject (200, then 404).
+11. **Result Date & notifications** (own backend, no Firebase):
+   *Result Date:* everyone can read it (no token = 401). A teacher or the Admin cannot set it
+   (403), and a past date is refused (400). The VP sets it 7, 4 and 2 days ahead; the dates come
+   from the server's `today`, so the run works on any day.
+   *Automatic reminders:* after each move, Usman (pending Physics) gets exactly one
+   `deadline_one_week`, `deadline_daily` and then urgent `deadline_urgent`. A second GET
+   makes no duplicate, and the VP gets none.
+   *Suppression:* a new teacher with one subject gets the urgent reminder, then submits ALL
+   marks. The reminder is marked read, and moving the date to 5 days creates no new reminder.
+   *Class Teacher reminder:* Sania nudges Usman for Physics 8-B (201), and again at once (429).
+   Already-submitted English (409), her own Chemistry (400), another Class Teacher, a subject
+   teacher, the VP and the Admin (403), and an unknown subject (404) are refused. Usman sees the
+   reminder (from Teacher Sania, with the note, newest first) and reads it; reading someone
+   else's gives 404. After that a new nudge is allowed (201), then read-all leaves 0 unread.
+   *Clean up:* the marks are cleared and Biology 9-C goes back to Sania. The new teacher is
+   hard-deleted (their notifications go too: `ON DELETE CASCADE`), and the Result Date is cleared.
 
 The collection cleans up after itself (deletes the student it adds, unpublishes 9-A),
 so it can be run again and again. Each run adds one new teacher account (`ali@school.com`,
 `ali2@school.com`, …) and one new class (`Class 11 - T<random>` after its rename); the subject it
-adds is deleted again. Folder 10's teacher and class are hard-deleted at the end.
+adds is deleted again. Folder 10's teacher and class are hard-deleted at the end; folder 11
+re-submits English 8-B (folder 4's new student had un-submitted it) and clears the Result Date.
 
 
 ## Against Azure

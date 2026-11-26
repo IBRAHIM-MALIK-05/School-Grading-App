@@ -79,6 +79,8 @@ namespace SchoolGradingApi.Controllers
                 Subjects = assignments
                     .Select(a => new SubjectStatusDto
                     {
+                        AssignmentId = a.Id,
+                        TeacherId = a.TeacherId,
                         SubjectName = a.Subject!.Name,
                         MaxMarks = a.Subject.MaxMarks,
                         TeacherName = a.Teacher?.FullName ?? "-",

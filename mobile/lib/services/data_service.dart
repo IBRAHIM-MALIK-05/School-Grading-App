@@ -7,6 +7,7 @@
 // Each method matches one endpoint of the .NET API (shown in the comments).
 
 import '../models/account.dart';
+import '../models/app_notification.dart';
 import '../models/app_user.dart';
 import '../models/assignment.dart';
 import '../models/class_tracker.dart';
@@ -61,4 +62,13 @@ abstract class DataService {
   Future<AssignmentMarks> getAssignmentMarks(int assignmentId); // GET /api/assignments/{id}/marks
   Future<void> saveMarks(int assignmentId, Map<int, int?> marksByStudentId,
       {required bool submit}); // PUT /api/assignments/{id}/marks
+
+  // ---------- Result Date + Notification Bell (our own backend, no Firebase) ----------
+  Future<ResultDateInfo> getResultDate(); // GET /api/settings/result-date (everyone)
+  Future<ResultDateInfo> setResultDate(DateTime? day); // PUT /api/settings/result-date (VP only; null = clear)
+  Future<NotificationInbox> getNotifications(); // GET /api/notifications (+ automatic deadline check)
+  // Returns the server's message, e.g. "Reminder sent to Teacher Usman for Physics."
+  Future<String> sendReminder(int assignmentId, String? note); // POST /api/notifications/remind (Class Teacher)
+  Future<void> markNotificationRead(int notificationId); // PUT /api/notifications/{id}/read
+  Future<void> markAllNotificationsRead(); // PUT /api/notifications/read-all
 }

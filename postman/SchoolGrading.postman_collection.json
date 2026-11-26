@@ -7156,6 +7156,2575 @@
           }
         }
       ]
+    },
+    {
+      "name": "11. Result Date & notifications",
+      "description": "Notification Bell (own backend, no Firebase). The Principal / VP sets the Result Date (teachers and Admin get 403, past dates 400). GET /notifications runs the automatic deadline check on the server: 7 days = deadline_one_week, 6-3 days = deadline_daily, 2-0 days = deadline_urgent, at most once per day per type, and never for a teacher who has submitted everything. A Class Teacher nudges one subject teacher (POST /notifications/remind); read / read-all. The folder puts the data back and clears the Result Date at the end.",
+      "item": [
+        {
+          "name": "Login - Teacher Usman (Physics, Class Teacher of 9-B)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set(\"usmanToken\", pm.response.json().token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"loginId\": \"usman@school.com\",\n  \"password\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login - Teacher Ahsan (teaches English in 8-B)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set(\"ahsanToken\", pm.response.json().token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"loginId\": \"ahsan@school.com\",\n  \"password\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Result Date - Teacher can view it",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Has the school's today\", () => pm.expect(json.today).to.match(/^\\d{4}-\\d{2}-\\d{2}$/));",
+                  "pm.test(\"Has resultDate + daysRemaining\", () => { pm.expect(json).to.have.property(\"resultDate\"); pm.expect(json).to.have.property(\"daysRemaining\"); });",
+                  "pm.collectionVariables.set(\"serverToday\", json.today);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/settings/result-date",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "result-date"
+              ]
+            },
+            "description": "Everyone who is logged in can see the Result Date. 'today' = the school's day (Pakistan time)."
+          }
+        },
+        {
+          "name": "Result Date - without a token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401 Unauthorized\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/settings/result-date",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "result-date"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Set Result Date - by a Teacher (not allowed)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const t = new Date(pm.collectionVariables.get(\"serverToday\") + \"T00:00:00Z\");",
+                  "t.setUTCDate(t.getUTCDate() + (7));",
+                  "pm.collectionVariables.set(\"resultDateBody\", JSON.stringify({ resultDate: t.toISOString().slice(0, 10) }));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Message mentions \\\"Only the Principal / VP\\\"\", () => pm.expect(pm.response.json().message).to.include(\"Only the Principal / VP\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/settings/result-date",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "result-date"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{{resultDateBody}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Set Result Date - by the Admin (not allowed)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const t = new Date(pm.collectionVariables.get(\"serverToday\") + \"T00:00:00Z\");",
+                  "t.setUTCDate(t.getUTCDate() + (7));",
+                  "pm.collectionVariables.set(\"resultDateBody\", JSON.stringify({ resultDate: t.toISOString().slice(0, 10) }));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Message mentions \\\"Only the Principal / VP\\\"\", () => pm.expect(pm.response.json().message).to.include(\"Only the Principal / VP\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/settings/result-date",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "result-date"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{{resultDateBody}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Set Result Date - date in the past (400)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const t = new Date(pm.collectionVariables.get(\"serverToday\") + \"T00:00:00Z\");",
+                  "t.setUTCDate(t.getUTCDate() + (-1));",
+                  "pm.collectionVariables.set(\"resultDateBody\", JSON.stringify({ resultDate: t.toISOString().slice(0, 10) }));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Message mentions \\\"cannot be in the past\\\"\", () => pm.expect(pm.response.json().message).to.include(\"cannot be in the past\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{vpToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/settings/result-date",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "result-date"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{{resultDateBody}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Set Result Date - VP sets it 7 days ahead (200)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const t = new Date(pm.collectionVariables.get(\"serverToday\") + \"T00:00:00Z\");",
+                  "t.setUTCDate(t.getUTCDate() + (7));",
+                  "pm.collectionVariables.set(\"resultDateBody\", JSON.stringify({ resultDate: t.toISOString().slice(0, 10) }));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"7 days remaining\", () => pm.expect(json.daysRemaining).to.eql(7));",
+                  "pm.test(\"Saved by VP Sarah\", () => pm.expect(json.updatedByName).to.eql(\"VP Sarah\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{vpToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/settings/result-date",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "result-date"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{{resultDateBody}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Result Date - Teacher sees the new date",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"7 days remaining\", () => pm.expect(pm.response.json().daysRemaining).to.eql(7));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/settings/result-date",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "result-date"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Notifications - 7 days left: deadline_one_week for Usman",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "const today = pm.collectionVariables.get(\"serverToday\");",
+                  "const ofType = (type) => json.items.filter(n => n.type === type && n.notificationDate === today);",
+                  "pm.test(\"daysRemaining is 7\", () => pm.expect(json.daysRemaining).to.eql(7));",
+                  "pm.test(\"Exactly one deadline_one_week for today\", () => pm.expect(ofType(\"deadline_one_week\").length).to.eql(1));",
+                  "pm.test(\"IsUrgent = false\", () => pm.expect(ofType(\"deadline_one_week\")[0].isUrgent).to.eql(false));",
+                  "pm.test(\"Text: Result is in 1 week\", () => pm.expect(ofType(\"deadline_one_week\")[0].message).to.include(\"Result is in 1 week\"));",
+                  "pm.test(\"Automatic = no sender\", () => pm.expect(ofType(\"deadline_one_week\")[0].senderName).to.eql(null));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{usmanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "description": "Usman still has unsubmitted Physics marks. GET runs the automatic check on the server (no cron)."
+          }
+        },
+        {
+          "name": "Notifications - again: no duplicate one-week reminder",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "const today = pm.collectionVariables.get(\"serverToday\");",
+                  "const ofType = (type) => json.items.filter(n => n.type === type && n.notificationDate === today);",
+                  "pm.test(\"Still exactly one deadline_one_week today (no duplicate)\", () => pm.expect(ofType(\"deadline_one_week\").length).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{usmanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Set Result Date - VP moves it to 4 days ahead",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const t = new Date(pm.collectionVariables.get(\"serverToday\") + \"T00:00:00Z\");",
+                  "t.setUTCDate(t.getUTCDate() + (4));",
+                  "pm.collectionVariables.set(\"resultDateBody\", JSON.stringify({ resultDate: t.toISOString().slice(0, 10) }));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"4 days remaining\", () => pm.expect(pm.response.json().daysRemaining).to.eql(4));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{vpToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/settings/result-date",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "result-date"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{{resultDateBody}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Notifications - 4 days left: deadline_daily for Usman",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "const today = pm.collectionVariables.get(\"serverToday\");",
+                  "const ofType = (type) => json.items.filter(n => n.type === type && n.notificationDate === today);",
+                  "pm.test(\"daysRemaining is 4\", () => pm.expect(json.daysRemaining).to.eql(4));",
+                  "pm.test(\"Exactly one deadline_daily for today\", () => pm.expect(ofType(\"deadline_daily\").length).to.eql(1));",
+                  "pm.test(\"IsUrgent = false\", () => pm.expect(ofType(\"deadline_daily\")[0].isUrgent).to.eql(false));",
+                  "pm.test(\"Text: Daily Reminder: 4 days left\", () => pm.expect(ofType(\"deadline_daily\")[0].message).to.include(\"Daily Reminder: 4 days left\"));",
+                  "pm.test(\"Automatic = no sender\", () => pm.expect(ofType(\"deadline_daily\")[0].senderName).to.eql(null));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{usmanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Set Result Date - VP moves it to 2 days ahead",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const t = new Date(pm.collectionVariables.get(\"serverToday\") + \"T00:00:00Z\");",
+                  "t.setUTCDate(t.getUTCDate() + (2));",
+                  "pm.collectionVariables.set(\"resultDateBody\", JSON.stringify({ resultDate: t.toISOString().slice(0, 10) }));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"2 days remaining\", () => pm.expect(pm.response.json().daysRemaining).to.eql(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{vpToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/settings/result-date",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "result-date"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{{resultDateBody}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Notifications - 2 days left: URGENT deadline_urgent for Usman",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "const today = pm.collectionVariables.get(\"serverToday\");",
+                  "const ofType = (type) => json.items.filter(n => n.type === type && n.notificationDate === today);",
+                  "pm.test(\"daysRemaining is 2\", () => pm.expect(json.daysRemaining).to.eql(2));",
+                  "pm.test(\"Exactly one deadline_urgent for today\", () => pm.expect(ofType(\"deadline_urgent\").length).to.eql(1));",
+                  "pm.test(\"IsUrgent = true\", () => pm.expect(ofType(\"deadline_urgent\")[0].isUrgent).to.eql(true));",
+                  "pm.test(\"Text: URGENT: Only 2 days remaining\", () => pm.expect(ofType(\"deadline_urgent\")[0].message).to.include(\"URGENT: Only 2 days remaining\"));",
+                  "pm.test(\"Automatic = no sender\", () => pm.expect(ofType(\"deadline_urgent\")[0].senderName).to.eql(null));",
+                  "pm.test(\"Mentions Physics\", () => pm.expect(ofType(\"deadline_urgent\")[0].message).to.include(\"Physics\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{usmanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Notifications - again: no duplicate urgent reminder",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "const today = pm.collectionVariables.get(\"serverToday\");",
+                  "const ofType = (type) => json.items.filter(n => n.type === type && n.notificationDate === today);",
+                  "pm.test(\"Still exactly one deadline_urgent today (no duplicate)\", () => pm.expect(ofType(\"deadline_urgent\").length).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{usmanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Notifications - VP gets no deadline reminders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"No deadline_* items\", () => pm.expect(pm.response.json().items.filter(n => n.type.startsWith(\"deadline_\")).length).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{vpToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "description": "Only teachers with pending marks are reminded."
+          }
+        },
+        {
+          "name": "Register - Notice Teacher with ONE subject (Biology 9-C)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201 Created\", () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set(\"noticeLoginId\", json.loginId);",
+                  "pm.collectionVariables.set(\"noticeTempPassword\", json.temporaryPassword);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Takes over Biology in Class 9 - C (no marks yet) from Sania; given back at the end.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Notice Teacher\",\n  \"role\": \"teacher\",\n  \"contactEmail\": \"notice.teacher@gmail.com\",\n  \"classTeacherOfClassId\": null,\n  \"assignments\": [\n    {\n      \"subjectId\": 5,\n      \"classId\": 5\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login - Notice Teacher (temporary password)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set(\"noticeToken\", json.token);",
+                  "pm.collectionVariables.set(\"noticeUserId\", json.user.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"loginId\": \"{{noticeLoginId}}\",\n  \"password\": \"{{noticeTempPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Change password - Notice Teacher",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{noticeToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/change-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "change-password"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{noticeTempPassword}}\",\n  \"newPassword\": \"Notice2026x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Notifications - Notice Teacher has a pending subject: urgent reminder",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "const today = pm.collectionVariables.get(\"serverToday\");",
+                  "const ofType = (type) => json.items.filter(n => n.type === type && n.notificationDate === today);",
+                  "pm.test(\"daysRemaining is 2\", () => pm.expect(json.daysRemaining).to.eql(2));",
+                  "pm.test(\"Exactly one deadline_urgent for today\", () => pm.expect(ofType(\"deadline_urgent\").length).to.eql(1));",
+                  "pm.test(\"IsUrgent = true\", () => pm.expect(ofType(\"deadline_urgent\")[0].isUrgent).to.eql(true));",
+                  "pm.test(\"Text: Biology (Class 9 - C)\", () => pm.expect(ofType(\"deadline_urgent\")[0].message).to.include(\"Biology (Class 9 - C)\"));",
+                  "pm.test(\"Automatic = no sender\", () => pm.expect(ofType(\"deadline_urgent\")[0].senderName).to.eql(null));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{noticeToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Marks of Biology 9-C (Notice Teacher)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const rows = pm.response.json().rows;",
+                  "pm.test(\"Class has students\", () => pm.expect(rows.length).to.be.above(0));",
+                  "pm.collectionVariables.set(\"noticeFullBody\", JSON.stringify({ submit: true, marks: rows.map(r => ({ studentId: r.studentId, obtained: 50 })) }));",
+                  "pm.collectionVariables.set(\"noticeClearBody\", JSON.stringify({ submit: false, marks: rows.map(r => ({ studentId: r.studentId, obtained: null })) }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{noticeToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assignments/25/marks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assignments",
+                "25",
+                "marks"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Submit marks - Notice Teacher submits ALL marks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Message mentions \\\"Marks submitted\\\"\", () => pm.expect(pm.response.json().message).to.include(\"Marks submitted\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{noticeToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assignments/25/marks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assignments",
+                "25",
+                "marks"
+              ]
+            },
+            "description": "This was the teacher's last pending subject: the API marks their deadline reminders as read.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{noticeFullBody}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Notifications - after the final submit: no unread deadline reminders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"All deadline_* reminders are read\", () => pm.expect(json.items.filter(n => n.type.startsWith(\"deadline_\") && !n.isRead).length).to.eql(0));",
+                  "pm.test(\"Unread count is 0\", () => pm.expect(json.unreadCount).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{noticeToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Set Result Date - VP moves it to 5 days ahead",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const t = new Date(pm.collectionVariables.get(\"serverToday\") + \"T00:00:00Z\");",
+                  "t.setUTCDate(t.getUTCDate() + (5));",
+                  "pm.collectionVariables.set(\"resultDateBody\", JSON.stringify({ resultDate: t.toISOString().slice(0, 10) }));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"5 days remaining\", () => pm.expect(pm.response.json().daysRemaining).to.eql(5));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{vpToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/settings/result-date",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "result-date"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{{resultDateBody}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Notifications - everything submitted: 0 new deadline reminders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "const today = pm.collectionVariables.get(\"serverToday\");",
+                  "const ofType = (type) => json.items.filter(n => n.type === type && n.notificationDate === today);",
+                  "pm.test(\"No deadline_daily created (strict suppression)\", () => pm.expect(ofType(\"deadline_daily\").length).to.eql(0));",
+                  "pm.test(\"No unread deadline reminders\", () => pm.expect(json.items.filter(n => n.type.startsWith(\"deadline_\") && !n.isRead).length).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{noticeToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Remind - Class Teacher Sania nudges Usman for Physics 8-B (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201 Created\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Message mentions \\\"Reminder sent to Teacher Usman for Physics\\\"\", () => pm.expect(pm.response.json().message).to.include(\"Reminder sent to Teacher Usman for Physics\"));",
+                  "pm.collectionVariables.set(\"reminderId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/remind",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "remind"
+              ]
+            },
+            "description": "Assignment 8 = Physics in Class 8 - B (Usman, not submitted). Sania is the Class Teacher of 8-B.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignmentId\": 8,\n  \"message\": \"Please submit by Friday.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remind - same subject again while unread (429)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 429 Too Many Requests\", () => pm.response.to.have.status(429));",
+                  "pm.test(\"Message mentions \\\"has not read it yet\\\"\", () => pm.expect(pm.response.json().message).to.include(\"has not read it yet\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/remind",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "remind"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignmentId\": 8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Marks of English 8-B (Ahsan)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const rows = pm.response.json().rows;",
+                  "pm.test(\"Every student has a mark\", () => pm.expect(rows.every(r => r.obtained !== null)).to.eql(true));",
+                  "pm.collectionVariables.set(\"englishBody\", JSON.stringify({ submit: true, marks: rows.map(r => ({ studentId: r.studentId, obtained: r.obtained })) }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{ahsanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assignments/6/marks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assignments",
+                "6",
+                "marks"
+              ]
+            },
+            "description": "Folder 4 added a student to 8-B, which un-submitted its subjects; Ahsan submits English again."
+          }
+        },
+        {
+          "name": "Submit marks - Ahsan submits English 8-B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Message mentions \\\"Marks submitted\\\"\", () => pm.expect(pm.response.json().message).to.include(\"Marks submitted\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{ahsanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assignments/6/marks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assignments",
+                "6",
+                "marks"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{{englishBody}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remind - subject already submitted (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Message mentions \\\"Marks for English have already been submitted\\\"\", () => pm.expect(pm.response.json().message).to.include(\"Marks for English have already been submitted\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/remind",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "remind"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignmentId\": 6\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remind - own subject (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Message mentions \\\"your own subject\\\"\", () => pm.expect(pm.response.json().message).to.include(\"your own subject\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/remind",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "remind"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignmentId\": 9\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remind - Class Teacher of ANOTHER class (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Message mentions \\\"Only the Class Teacher of Class 8 - B\\\"\", () => pm.expect(pm.response.json().message).to.include(\"Only the Class Teacher of Class 8 - B\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{usmanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/remind",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "remind"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignmentId\": 8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remind - subject teacher of that class (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{ahsanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/remind",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "remind"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignmentId\": 8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remind - by the VP (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{vpToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/remind",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "remind"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignmentId\": 8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remind - by the Admin (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/remind",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "remind"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignmentId\": 8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remind - assignment not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/remind",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "remind"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignmentId\": 99999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Notifications - Usman receives the Class Teacher reminder",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "const n = json.items.find(x => x.id === Number(pm.collectionVariables.get(\"reminderId\")));",
+                  "pm.test(\"Reminder is in Usman's list\", () => pm.expect(n).to.be.an(\"object\"));",
+                  "pm.test(\"Type class_teacher_reminder\", () => pm.expect(n.type).to.eql(\"class_teacher_reminder\"));",
+                  "pm.test(\"Title names class + subject\", () => pm.expect(n.title).to.include(\"Class 8 - B (Physics)\"));",
+                  "pm.test(\"From Teacher Sania\", () => pm.expect(n.senderName).to.eql(\"Teacher Sania\"));",
+                  "pm.test(\"Has the note\", () => pm.expect(n.message).to.include(\"Please submit by Friday.\"));",
+                  "pm.test(\"Unread\", () => pm.expect(n.isRead).to.eql(false));",
+                  "pm.test(\"Newest first\", () => pm.expect(json.items[0].id).to.eql(n.id));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{usmanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Mark as read - someone else's notification (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{reminderId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{reminderId}}",
+                "read"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Mark as read - Usman reads the reminder",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Returns the new unread count\", () => pm.expect(pm.response.json().unreadCount).to.be.a(\"number\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{usmanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{reminderId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{reminderId}}",
+                "read"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Notifications - the reminder is now read",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const n = pm.response.json().items.find(x => x.id === Number(pm.collectionVariables.get(\"reminderId\")));",
+                  "pm.test(\"isRead = true\", () => pm.expect(n.isRead).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{usmanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Remind - allowed again once the last one was read (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201 Created\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{saniaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/remind",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "remind"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignmentId\": 8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Mark all read - Usman",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Unread count 0\", () => pm.expect(pm.response.json().unreadCount).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{usmanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/read-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "read-all"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Notifications - Usman has 0 unread",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Unread count 0\", () => pm.expect(pm.response.json().unreadCount).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{usmanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Mark as read - not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{usmanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/99999/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "99999",
+                "read"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Notifications - without a token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401 Unauthorized\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Clean up - Notice Teacher clears the Biology 9-C marks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{noticeToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assignments/25/marks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assignments",
+                "25",
+                "marks"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{{noticeClearBody}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Clean up - remember the Class Teacher of 9-C",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "const list = Array.isArray(j) ? j : j.classes;",
+                  "const c9c = list.find(k => k.id === 5);",
+                  "pm.test(\"Class 9 - C found\", () => pm.expect(c9c).to.be.an(\"object\"));",
+                  "pm.collectionVariables.set(\"c9cTeacherId\", c9c.classTeacherId === null || c9c.classTeacherId === undefined ? \"null\" : String(c9c.classTeacherId));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Clean up - Biology 9-C goes back to Sania",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/classes/5/assignments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "5",
+                "assignments"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classTeacherId\": {{c9cTeacherId}},\n  \"subjectTeachers\": [ { \"subjectId\": 5, \"teacherId\": 3 } ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Clean up - soft-delete the Notice Teacher",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/SoftDeleteById?id={{noticeUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "SoftDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{noticeUserId}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Clean up - hard-delete the Notice Teacher (their notifications go too)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Message mentions \\\"permanently deleted\\\"\", () => pm.expect(pm.response.json().message).to.include(\"permanently deleted\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/HardDeleteById?id={{noticeUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "HardDeleteById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{noticeUserId}}"
+                }
+              ]
+            },
+            "description": "notifications.RecipientUserId is ON DELETE CASCADE, so the inbox does not block the hard delete."
+          }
+        },
+        {
+          "name": "Clean up - VP clears the Result Date",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Result Date is empty again\", () => pm.expect(pm.response.json().resultDate).to.eql(null));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{vpToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/settings/result-date",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "result-date"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resultDate\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ],
   "variable": [
@@ -7257,6 +9826,58 @@
     },
     {
       "key": "delStudentId",
+      "value": ""
+    },
+    {
+      "key": "usmanToken",
+      "value": ""
+    },
+    {
+      "key": "ahsanToken",
+      "value": ""
+    },
+    {
+      "key": "serverToday",
+      "value": ""
+    },
+    {
+      "key": "resultDateBody",
+      "value": ""
+    },
+    {
+      "key": "noticeLoginId",
+      "value": ""
+    },
+    {
+      "key": "noticeTempPassword",
+      "value": ""
+    },
+    {
+      "key": "noticeToken",
+      "value": ""
+    },
+    {
+      "key": "noticeUserId",
+      "value": ""
+    },
+    {
+      "key": "noticeFullBody",
+      "value": ""
+    },
+    {
+      "key": "noticeClearBody",
+      "value": ""
+    },
+    {
+      "key": "reminderId",
+      "value": ""
+    },
+    {
+      "key": "c9cTeacherId",
+      "value": ""
+    },
+    {
+      "key": "englishBody",
       "value": ""
     }
   ]

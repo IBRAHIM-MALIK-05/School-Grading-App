@@ -38,6 +38,8 @@ namespace SchoolGradingApi.Dtos
     // One line of the Class Teacher's tracker
     public class SubjectStatusDto
     {
+        public int AssignmentId { get; set; }     // for the Class Teacher's "Notify" button
+        public int TeacherId { get; set; }
         public string SubjectName { get; set; } = "";
         public int MaxMarks { get; set; }
         public string TeacherName { get; set; } = "";

@@ -4,11 +4,13 @@
 //  1. Subjects  - one compact row each: subject, teacher, "5/5 marks entered", Submitted / Pending
 //  2. Result cards - one row per student: Ready (+ View / Print) or Waiting, and EXACTLY
 //     which subject + teacher the card is still waiting for. No cross-checking tables.
-// The Class Teacher can also Publish (lock) / Unpublish the results at the bottom.
+// The Class Teacher can also Publish (lock) / Unpublish the results at the bottom,
+// and press "Notify" on a pending subject to remind that subject teacher.
 
 import 'package:flutter/material.dart';
 
 import '../../models/class_tracker.dart';
+import '../../models/submission_state.dart';
 import '../../services/current_service.dart';
 import '../../widgets/app_theme.dart';
 import '../../widgets/async_views.dart';
@@ -109,7 +111,7 @@ class _ClassTrackerScreenState extends State<ClassTrackerScreen> {
                     children: [
                       for (var i = 0; i < tracker.subjects.length; i++) ...[
                         if (i > 0) const Divider(height: 1),
-                        _subjectRow(tracker.subjects[i]),
+                        _subjectRow(tracker, tracker.subjects[i]),
                       ],
                     ],
                   ),
@@ -176,8 +178,65 @@ class _ClassTrackerScreenState extends State<ClassTrackerScreen> {
     );
   }
 
+  // "Notify" only for the Class Teacher, only for a subject that is still pending
+  // and taught by SOMEONE ELSE (the Class Teacher's own subject needs no reminder).
+  bool _canNotify(SubjectStatus s) =>
+      widget.isClassTeacher &&
+      s.state != SubmissionState.submitted &&
+      s.assignmentId > 0 &&
+      s.teacherId != dataService.currentUser?.id;
+
+  // Class Teacher -> one subject teacher: "please submit your marks"
+  Future<void> _notify(ClassTracker tracker, SubjectStatus s) async {
+    final noteController = TextEditingController();
+    final send = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Notify ${s.teacherName}?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${s.teacherName} will get a reminder in the app that you are waiting for '
+                'the ${s.subjectName} marks of ${tracker.schoolClass.name} '
+                '(${s.enteredCount}/${s.studentCount} entered, not submitted).'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: noteController,
+              maxLength: 200,
+              maxLines: 2,
+              decoration: const InputDecoration(
+                labelText: 'Short note (optional)',
+                hintText: 'e.g. Please submit by Friday.',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(context, true),
+            icon: const Icon(Icons.send, size: 18),
+            label: const Text('Send reminder'),
+          ),
+        ],
+      ),
+    );
+    final note = noteController.text.trim();
+    noteController.dispose();
+    if (send != true || !mounted) return;
+
+    try {
+      final message = await dataService.sendReminder(s.assignmentId, note.isEmpty ? null : note);
+      if (mounted) showMessage(context, message); // "Reminder sent to Teacher Usman for Physics."
+    } catch (e) {
+      if (mounted) showMessage(context, errorText(e), isError: true);
+    }
+  }
+
   // One compact line per subject
-  Widget _subjectRow(SubjectStatus s) {
+  Widget _subjectRow(ClassTracker tracker, SubjectStatus s) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
@@ -192,7 +251,22 @@ class _ClassTrackerScreenState extends State<ClassTrackerScreen> {
               ],
             ),
           ),
-          StatusChip.classTeacherView(s.state),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              StatusChip.classTeacherView(s.state),
+              if (_canNotify(s))
+                TextButton.icon(
+                  onPressed: () => _notify(tracker, s),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  icon: const Icon(Icons.notifications_active_outlined, size: 18),
+                  label: const Text('Notify'),
+                ),
+            ],
+          ),
         ],
       ),
     );

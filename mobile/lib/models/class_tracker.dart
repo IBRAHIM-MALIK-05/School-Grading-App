@@ -7,6 +7,8 @@ import 'student.dart';
 import 'submission_state.dart';
 
 class SubjectStatus {
+  final int assignmentId; // used by the Class Teacher's "Notify" button
+  final int teacherId;
   final String subjectName;
   final int maxMarks;
   final String teacherName;
@@ -15,6 +17,8 @@ class SubjectStatus {
   final DateTime? submittedAt;
 
   const SubjectStatus({
+    required this.assignmentId,
+    required this.teacherId,
     required this.subjectName,
     required this.maxMarks,
     required this.teacherName,
@@ -24,6 +28,8 @@ class SubjectStatus {
   });
 
   factory SubjectStatus.fromJson(Map<String, dynamic> json) => SubjectStatus(
+        assignmentId: json['assignmentId'] ?? 0,
+        teacherId: json['teacherId'] ?? 0,
         subjectName: json['subjectName'],
         maxMarks: json['maxMarks'],
         teacherName: json['teacherName'],

@@ -15,6 +15,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/account.dart';
+import '../models/app_notification.dart';
 import '../models/app_user.dart';
 import '../models/assignment.dart';
 import '../models/class_tracker.dart';
@@ -209,6 +210,44 @@ class ApiDataService implements DataService {
   Future<String> softDeleteUser(int userId) async {
     final data = await _request('DELETE', '/users/SoftDeleteById?id=$userId');
     return (data is Map && data['message'] != null) ? data['message'] : 'Account deleted.';
+  }
+
+  // ======================= Result Date + notifications =======================
+
+  @override
+  Future<ResultDateInfo> getResultDate() async {
+    final data = await _request('GET', '/settings/result-date');
+    return ResultDateInfo.fromJson(data);
+  }
+
+  @override
+  Future<ResultDateInfo> setResultDate(DateTime? day) async {
+    final data = await _request('PUT', '/settings/result-date',
+        body: {'resultDate': day == null ? null : dayToJson(day)});
+    return ResultDateInfo.fromJson(data);
+  }
+
+  @override
+  Future<NotificationInbox> getNotifications() async {
+    final data = await _request('GET', '/notifications');
+    return NotificationInbox.fromJson(data);
+  }
+
+  @override
+  Future<String> sendReminder(int assignmentId, String? note) async {
+    final data = await _request('POST', '/notifications/remind',
+        body: {'assignmentId': assignmentId, 'message': ?note});
+    return (data is Map && data['message'] != null) ? data['message'] : 'Reminder sent.';
+  }
+
+  @override
+  Future<void> markNotificationRead(int notificationId) async {
+    await _request('PUT', '/notifications/$notificationId/read');
+  }
+
+  @override
+  Future<void> markAllNotificationsRead() async {
+    await _request('PUT', '/notifications/read-all');
   }
 
   @override

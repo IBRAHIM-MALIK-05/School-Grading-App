@@ -592,6 +592,61 @@ namespace SchoolGradingApi.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SchoolGradingApi.entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AssignmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsUrgent")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<DateTime>("NotificationDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("RecipientUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SenderUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("varchar(40)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignmentId");
+
+                    b.HasIndex("SenderUserId");
+
+                    b.HasIndex("RecipientUserId", "NotificationDate", "Type");
+
+                    b.ToTable("notifications", (string)null);
+                });
+
             modelBuilder.Entity("SchoolGradingApi.entities.SchoolClass", b =>
                 {
                     b.Property<int>("Id")
@@ -666,6 +721,33 @@ namespace SchoolGradingApi.Migrations
                             GradeName = "Class 9",
                             Section = "C",
                             isDeleted = false
+                        });
+                });
+
+            modelBuilder.Entity("SchoolGradingApi.entities.SchoolSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ResultDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.ToTable("school_settings", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1
                         });
                 });
 
@@ -1209,6 +1291,31 @@ namespace SchoolGradingApi.Migrations
                     b.Navigation("Subject");
                 });
 
+            modelBuilder.Entity("SchoolGradingApi.entities.Notification", b =>
+                {
+                    b.HasOne("SchoolGradingApi.entities.TeachingAssignment", "Assignment")
+                        .WithMany()
+                        .HasForeignKey("AssignmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SchoolGradingApi.entities.AppUser", "RecipientUser")
+                        .WithMany()
+                        .HasForeignKey("RecipientUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SchoolGradingApi.entities.AppUser", "SenderUser")
+                        .WithMany()
+                        .HasForeignKey("SenderUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Assignment");
+
+                    b.Navigation("RecipientUser");
+
+                    b.Navigation("SenderUser");
+                });
+
             modelBuilder.Entity("SchoolGradingApi.entities.SchoolClass", b =>
                 {
                     b.HasOne("SchoolGradingApi.entities.AppUser", "ClassTeacher")
@@ -1217,6 +1324,16 @@ namespace SchoolGradingApi.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("ClassTeacher");
+                });
+
+            modelBuilder.Entity("SchoolGradingApi.entities.SchoolSettings", b =>
+                {
+                    b.HasOne("SchoolGradingApi.entities.AppUser", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("UpdatedByUser");
                 });
 
             modelBuilder.Entity("SchoolGradingApi.entities.Student", b =>

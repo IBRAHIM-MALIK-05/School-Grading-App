@@ -149,6 +149,7 @@ Business rules (marks between 0 and max, "cannot edit a published class",
 | `03_school_grading_export_for_azure.sql` | phpMyAdmin export used to migrate to Azure (Milestone 3); `student_removals` was added to it later so XAMPP and Azure stay identical |
 | `04_add_student_removals_generated_by_ef.sql` | SQL of the 2nd migration `AddStudentRemovals` (one new table, see below) – for reading only |
 | `05_add_soft_delete_generated_by_ef.sql` | SQL of the 3rd migration `AddSoftDelete` (`isDeleted` on `users` + `classes`) – for reading only |
+| `06_add_notifications_generated_by_ef.sql` | SQL of the 4th migration `AddNotifications` (`school_settings` + `notifications`) – for reading only |
 
 ## Later change: `student_removals` (migration `AddStudentRemovals`)
 When a Class Teacher (or the Admin) deletes a student, the student row and ALL their marks are
@@ -185,6 +186,48 @@ marks, subjects or removal notices still point to it, so results are never lost.
 Applied locally with `dotnet ef database update`; the same columns are in
 `03_…_export_for_azure.sql` (checked: importing it gives exactly the XAMPP columns, indexes,
 foreign keys and rows), so `import_to_azure.py --reset` brings Azure to the same state.
+
+## Later change: Result Date + notifications (migration `AddNotifications`)
+Two new tables for the Notification Bell (our own backend, no Firebase):
+
+**`school_settings`**: exactly ONE row (`Id = 1`, not AUTO_INCREMENT).
+
+| Column | Type | Meaning |
+|---|---|---|
+| `Id` | int, PK | always 1 |
+| `ResultDate` | date, NULL | the day results are announced (set by the Principal / VP). NULL = not set |
+| `UpdatedByUserId` | int, NULL, FK → `users.Id` (ON DELETE SET NULL) | who changed it last |
+| `UpdatedAt` | datetime(6), NULL | when (UTC) |
+
+**`notifications`**: one message in a user's bell.
+
+| Column | Type | Meaning |
+|---|---|---|
+| `Id` | int, PK, AUTO_INCREMENT | |
+| `RecipientUserId` | int, FK → `users.Id` (ON DELETE **CASCADE**) | who gets it (a user removed for ever loses their inbox) |
+| `SenderUserId` | int, NULL, FK → `users.Id` (ON DELETE SET NULL) | the Class Teacher; **NULL = automatic system reminder** |
+| `Type` | varchar(40) | `class_teacher_reminder`, `deadline_one_week`, `deadline_daily`, `deadline_urgent` |
+| `Title`, `Message` | varchar(150), varchar(1000) | the text shown in the app |
+| `IsUrgent` | tinyint(1) | 1 = red alert (2 days or less) |
+| `IsRead` | tinyint(1), DEFAULT 0 | |
+| `CreatedAt` | datetime(6) | UTC |
+| `NotificationDate` | date | the school day it was made for |
+| `AssignmentId` | int, NULL, FK → `teaching_assignments.Id` (ON DELETE SET NULL) | which subject + class a reminder is about |
+
+Index `(RecipientUserId, NotificationDate, Type)`: the deduplication check, "does this teacher
+already have today's reminder of this type?", is a quick index lookup. The API makes at most
+one automatic reminder per teacher, day and type, so refreshing the app never creates
+duplicates.
+
+`DateOnly` (a date without a time) is stored in a `date` column. Oracle's MySQL provider
+reads `date` back as `DateTime`, so `AppDbContext.ConfigureConventions` converts it
+(DateOnly ↔ DateTime at midnight).
+
+As with soft delete: applied locally with `dotnet ef database update`. The same tables, the
+settings row and the migration-history row are also in `03_…_export_for_azure.sql`. I checked
+it by importing it into a test database: the columns, indexes, foreign keys and rows of all
+10 tables are the same as XAMPP. `import_to_azure.py --reset` now also compares row counts for
+`school_settings` and `notifications`.
 
 ## How the tables were created (Milestone 4)
 1. `Add-Migration InitialCreate` (CLI: `dotnet ef migrations add InitialCreate`) – EF Core

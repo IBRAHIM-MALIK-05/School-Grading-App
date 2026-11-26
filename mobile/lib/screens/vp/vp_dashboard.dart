@@ -11,6 +11,7 @@ import '../../widgets/app_theme.dart';
 import '../../widgets/async_views.dart';
 import '../../widgets/status_chip.dart';
 import '../shared/class_tracker_screen.dart';
+import 'result_date_card.dart';
 
 class VpDashboard extends StatefulWidget {
   const VpDashboard({super.key});
@@ -62,7 +63,9 @@ class _VpDashboardState extends State<VpDashboard> {
               children: [
                 Text('Welcome ${dataService.currentUser!.fullName}',
                     style: const TextStyle(fontSize: 22)),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
+                const ResultDateCard(), // only the VP can set / change / clear it
+                const SizedBox(height: 12),
                 // 4 stat tiles (2 x 2)
                 Row(
                   children: [

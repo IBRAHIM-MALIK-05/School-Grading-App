@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SchoolGradingApi.entities;
 
 namespace SchoolGradingApi.database
@@ -19,6 +20,26 @@ namespace SchoolGradingApi.database
         public DbSet<TeachingAssignment> TeachingAssignments => Set<TeachingAssignment>();
         public DbSet<Mark> Marks => Set<Mark>();
         public DbSet<StudentRemoval> StudentRemovals => Set<StudentRemoval>();
+        public DbSet<SchoolSettings> SchoolSettings => Set<SchoolSettings>();
+        public DbSet<Notification> Notifications => Set<Notification>();
+
+        // DateOnly (a date without a time, e.g. the Result Date) is saved in a MySQL DATE column.
+        // Oracle's MySQL provider reads DATE values back as DateTime, so EF converts them here
+        // (DateOnly <-> DateTime at midnight). Used by school_settings and notifications.
+        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        {
+            configurationBuilder.Properties<DateOnly>()
+                .HaveConversion<DateOnlyConverter>()
+                .HaveColumnType("date");
+        }
+
+        private class DateOnlyConverter : ValueConverter<DateOnly, DateTime>
+        {
+            public DateOnlyConverter()
+                : base(d => d.ToDateTime(TimeOnly.MinValue), dt => DateOnly.FromDateTime(dt))
+            {
+            }
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -208,6 +229,67 @@ namespace SchoolGradingApi.database
                 .WithMany()
                 .HasForeignKey(e => e.RemovedById)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // ---------------- school_settings (one row: the Result Date) ----------------
+            modelBuilder.Entity<SchoolSettings>().ToTable("school_settings");
+
+            modelBuilder.Entity<SchoolSettings>()
+                .Property(e => e.Id)
+                .ValueGeneratedNever();           // always Id = 1, never AUTO_INCREMENT
+
+            // school_settings.UpdatedByUserId -> users.Id (deleting that user keeps the date)
+            modelBuilder.Entity<SchoolSettings>()
+                .HasOne(e => e.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.UpdatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // ---------------- notifications (the Notification Bell) ----------------
+            modelBuilder.Entity<Notification>().ToTable("notifications");
+
+            modelBuilder.Entity<Notification>()
+                .Property(e => e.Type)
+                .HasMaxLength(40)
+                .IsRequired();
+
+            modelBuilder.Entity<Notification>()
+                .Property(e => e.Title)
+                .HasMaxLength(150)
+                .IsRequired();
+
+            modelBuilder.Entity<Notification>()
+                .Property(e => e.Message)
+                .HasMaxLength(1000)
+                .IsRequired();
+
+            modelBuilder.Entity<Notification>()
+                .Property(e => e.IsRead)
+                .HasDefaultValue(false);
+
+            // notifications.RecipientUserId -> users.Id (a user removed for ever loses their inbox)
+            modelBuilder.Entity<Notification>()
+                .HasOne(e => e.RecipientUser)
+                .WithMany()
+                .HasForeignKey(e => e.RecipientUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // notifications.SenderUserId -> users.Id (null = automatic system reminder)
+            modelBuilder.Entity<Notification>()
+                .HasOne(e => e.SenderUser)
+                .WithMany()
+                .HasForeignKey(e => e.SenderUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // notifications.AssignmentId -> teaching_assignments.Id (which subject + class)
+            modelBuilder.Entity<Notification>()
+                .HasOne(e => e.Assignment)
+                .WithMany()
+                .HasForeignKey(e => e.AssignmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Fast "do I already have today's reminder of this type?" check (deduplication)
+            modelBuilder.Entity<Notification>()
+                .HasIndex(e => new { e.RecipientUserId, e.NotificationDate, e.Type });
 
             // ---------------- demo data ----------------
             SeedData.Add(modelBuilder);

@@ -309,6 +309,57 @@ CREATE TABLE IF NOT EXISTS `student_removals` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `notifications`
+-- (added later with the EF migration AddNotifications - the Notification Bell,
+--  see database/06_add_notifications_generated_by_ef.sql. Starts empty.)
+--
+
+DROP TABLE IF EXISTS `notifications`;
+CREATE TABLE IF NOT EXISTS `notifications` (
+  `Id` int(11) NOT NULL AUTO_INCREMENT,
+  `RecipientUserId` int(11) NOT NULL,
+  `SenderUserId` int(11) DEFAULT NULL,
+  `Type` varchar(40) NOT NULL,
+  `Title` varchar(150) NOT NULL,
+  `Message` varchar(1000) NOT NULL,
+  `IsUrgent` tinyint(1) NOT NULL,
+  `IsRead` tinyint(1) NOT NULL DEFAULT 0,
+  `CreatedAt` datetime(6) NOT NULL,
+  `NotificationDate` date NOT NULL,
+  `AssignmentId` int(11) DEFAULT NULL,
+  PRIMARY KEY (`Id`),
+  KEY `IX_notifications_AssignmentId` (`AssignmentId`),
+  KEY `IX_notifications_RecipientUserId_NotificationDate_Type` (`RecipientUserId`,`NotificationDate`,`Type`),
+  KEY `IX_notifications_SenderUserId` (`SenderUserId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `school_settings`
+-- (added with the EF migration AddNotifications - ONE row, Id = 1: the Result Date set by the VP)
+--
+
+DROP TABLE IF EXISTS `school_settings`;
+CREATE TABLE IF NOT EXISTS `school_settings` (
+  `Id` int(11) NOT NULL,
+  `ResultDate` date DEFAULT NULL,
+  `UpdatedByUserId` int(11) DEFAULT NULL,
+  `UpdatedAt` datetime(6) DEFAULT NULL,
+  PRIMARY KEY (`Id`),
+  KEY `IX_school_settings_UpdatedByUserId` (`UpdatedByUserId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `school_settings`
+--
+
+INSERT INTO `school_settings` (`Id`, `ResultDate`, `UpdatedByUserId`, `UpdatedAt`) VALUES
+(1, NULL, NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `__efmigrationshistory`
 --
 
@@ -326,7 +377,8 @@ CREATE TABLE IF NOT EXISTS `__efmigrationshistory` (
 INSERT INTO `__efmigrationshistory` (`MigrationId`, `ProductVersion`) VALUES
 ('20261124031825_InitialCreate', '10.0.12'),
 ('20261125192922_AddStudentRemovals', '10.0.12'),
-('20261125213126_AddSoftDelete', '10.0.12');
+('20261125213126_AddSoftDelete', '10.0.12'),
+('20261126065741_AddNotifications', '10.0.12');
 
 --
 -- Constraints for dumped tables
@@ -345,6 +397,20 @@ ALTER TABLE `marks`
   ADD CONSTRAINT `FK_marks_students_StudentId` FOREIGN KEY (`StudentId`) REFERENCES `students` (`Id`) ON DELETE CASCADE,
   ADD CONSTRAINT `FK_marks_subjects_SubjectId` FOREIGN KEY (`SubjectId`) REFERENCES `subjects` (`Id`),
   ADD CONSTRAINT `FK_marks_users_EnteredById` FOREIGN KEY (`EnteredById`) REFERENCES `users` (`Id`);
+
+--
+-- Constraints for table `notifications`
+--
+ALTER TABLE `notifications`
+  ADD CONSTRAINT `FK_notifications_teaching_assignments_AssignmentId` FOREIGN KEY (`AssignmentId`) REFERENCES `teaching_assignments` (`Id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `FK_notifications_users_RecipientUserId` FOREIGN KEY (`RecipientUserId`) REFERENCES `users` (`Id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `FK_notifications_users_SenderUserId` FOREIGN KEY (`SenderUserId`) REFERENCES `users` (`Id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `school_settings`
+--
+ALTER TABLE `school_settings`
+  ADD CONSTRAINT `FK_school_settings_users_UpdatedByUserId` FOREIGN KEY (`UpdatedByUserId`) REFERENCES `users` (`Id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `students`

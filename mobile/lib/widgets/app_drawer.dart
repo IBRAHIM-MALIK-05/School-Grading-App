@@ -12,6 +12,7 @@ import '../screens/auth/login_screen.dart';
 import '../screens/shared/class_tracker_screen.dart';
 import '../screens/shared/manage_students_screen.dart';
 import '../services/current_service.dart';
+import '../services/notification_center.dart';
 import 'app_theme.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -28,6 +29,7 @@ class AppDrawer extends StatelessWidget {
   }
 
   void _logout(BuildContext context) {
+    notificationCenter.stop(); // no more polling for notifications
     dataService.logout();
     // Remove every screen and go back to Login
     Navigator.pushAndRemoveUntil(

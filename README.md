@@ -32,6 +32,9 @@ A school result-management system: **Flutter app → ASP.NET Core Web API (.NET 
 | Class tracker + result-card readiness | ✓ (view) | ✓ | | ✓ (view) |
 | Result card | ✓ (view) | ✓ + **Print / Save PDF** | ✗ 403 | ✓ (view) |
 | Publish / unpublish results | | ✓ | | |
+| Set / change / clear the **Result Date** | ✗ 403 | ✗ 403 | ✗ 403 | ✓ |
+| **Notify** the teacher of a pending subject | ✗ 403 | ✓ | ✗ 403 | ✗ 403 |
+| Notification Bell + automatic Result Date reminders | | ✓ | ✓ | |
 
 **Two login screens:** Teachers and the Principal / VP use the default *Teacher / Vice Principal
 Login*; the Admin taps **Login as Admin**. The API refuses an account on the wrong screen (403),
@@ -52,13 +55,43 @@ The backend maintainer has extra Admin-only endpoints in **Swagger only** – th
 | `PUT /api/users/RestoreById?id=` | undo a soft delete |
 | `DELETE /api/users/HardDeleteById?id=` | remove the row for ever – refused (409) while marks or other rows still point to it |
 
+**Notifications (own backend + `flutter_local_notifications`, no Firebase).** Two new tables
+(`school_settings`, `notifications`, migration `AddNotifications`):
+- The **Principal / VP** sets the *Result Date* on the dashboard (calendar; a past date = 400).
+- Every teacher sees it as a banner and has a **Notification Bell** with a red unread badge.
+  The app asks `GET /api/notifications` at login and every 30 seconds.
+- **Automatic reminders need no cron job** (the free Azure F1 sleeps). Each time a teacher's
+  app asks, the server counts the days left and adds a reminder if one is due:
+  - 7 days → `deadline_one_week`;
+  - 6–3 days → `deadline_daily`;
+  - 2–0 days → red `deadline_urgent`.
+
+  A teacher gets at most one reminder per type per day, and only while they still have
+  unsubmitted marks. Their last *Submit* marks the unread reminders as read.
+- On **My Class** the Class Teacher presses **Notify** next to a pending subject. That
+  subject teacher gets a *"Marks Reminder — Class 8 - B (Physics)"* with an optional note.
+  The same subject cannot be nudged again while the last reminder is unread (429, 60 min).
+- New unread notifications pop up as a real phone / Windows / browser alert. On the web,
+  permission is asked only after a click on *Enable Desktop/Browser Alerts*; `zonedSchedule`
+  is never used. If alerts are blocked, the bell and the in-app message still work.
+
+| Endpoint | Who | What it does |
+|---|---|---|
+| `GET /api/settings/result-date` | everyone | date, days left, the school's "today" (Pakistan time) |
+| `PUT /api/settings/result-date` | VP only | `{ "resultDate": "2026-12-03" }` or `null` to clear |
+| `GET /api/notifications` | everyone | runs the deadline check (teachers), then `{ unreadCount, resultDate, daysRemaining, items }` |
+| `POST /api/notifications/remind` | Class Teacher of that class | `{ "assignmentId": 8, "message": "optional note" }` → 201 |
+| `PUT /api/notifications/{id}/read` | owner | mark one as read (someone else's = 404) |
+| `PUT /api/notifications/read-all` | owner | mark all as read |
+
 Deleting a student removes them and all their marks from every subject of the class; the
 subject teachers then see *"… was removed by the Class Teacher of …"* on their marks screen.
 A sample printed result card is in `docs/samples/result_card_sample.pdf`
 (made by `flutter test test/report_card_pdf_test.dart`); screenshots of these features are
 `docs/screenshots/m7b_*.png` (`tools/screenshots/capture_m7b_features.py`); the login and
 Admin Panel screens are `m7c_*.png` (`tools/screenshots/capture_m7c_admin.py`); soft / hard
-delete is `m7d_*.png` (`tools/screenshots/capture_m7d_delete.py`).
+delete is `m7d_*.png` (`tools/screenshots/capture_m7d_delete.py`); the Result Date and
+notifications are `m7e_*.png` (`tools/screenshots/capture_m7e_notifications.py`).
 
 ## Run the API (local)
 1. Start **Apache + MySQL** in the XAMPP Control Panel (database `school_grading`).
@@ -96,7 +129,7 @@ First time only (creates the tables + demo data): Visual Studio → *Package Man
 ## Test the API (Postman / Newman)
 - Local: with the API running, double-click `postman/run_tests_local.cmd`.
 - Azure: double-click `postman/run_tests_azure.cmd` (wakes the server up first).
-- Both run 148 requests / 285 tests and write an HTML report to `postman/reports/`
+- Both run 200 requests / 399 tests and write an HTML report to `postman/reports/`
   (login tokens are removed from the report by `postman/redact_tokens.js`).
   Or import the JSON files in `postman/` into the Postman app and pick the *Local* or *Azure* environment.
 - Afterwards, reset the cloud data: `python tools/azure/import_to_azure.py --reset`.

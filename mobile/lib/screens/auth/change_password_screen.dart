@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/current_service.dart';
+import '../../services/notification_center.dart';
 import '../../widgets/app_theme.dart';
 import '../../widgets/async_views.dart';
 import '../home_router.dart';
@@ -57,6 +58,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   void _logout() {
+    notificationCenter.stop();
     dataService.logout();
     Navigator.pushAndRemoveUntil(
       context,

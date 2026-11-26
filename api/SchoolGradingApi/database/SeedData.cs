@@ -132,6 +132,12 @@ namespace SchoolGradingApi.database
             }
             modelBuilder.Entity<TeachingAssignment>().HasData(assignments);
             modelBuilder.Entity<Mark>().HasData(marks);
+
+            // ---------------- school_settings ----------------
+            // The one settings row. No Result Date yet: the Principal / VP sets it in the app.
+            modelBuilder.Entity<SchoolSettings>().HasData(
+                new SchoolSettings { Id = 1, ResultDate = null, UpdatedByUserId = null, UpdatedAt = null }
+            );
         }
     }
 }
